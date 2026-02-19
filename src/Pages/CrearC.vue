@@ -33,6 +33,48 @@ const form = ref({
 // catálogo de carreras desde backend
 const carreras = ref([]);
 
+// Mostrar/ocultar contraseña y generador seguro
+const showPassword = ref(false);
+const generatedPassword = ref(null);
+
+const generatePassword = (length = 8) => {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const digits = '0123456789';
+  const all = upper + lower + digits;
+
+  let pwd = '';
+  const pick = (set) => set[Math.floor(Math.random() * set.length)];
+  pwd += pick(upper);
+  pwd += pick(lower);
+  pwd += pick(digits);
+
+  const remaining = Math.max(0, length - pwd.length);
+  if (window.crypto && window.crypto.getRandomValues) {
+    const array = new Uint32Array(remaining);
+    window.crypto.getRandomValues(array);
+    for (let i = 0; i < remaining; i++) {
+      pwd += all[array[i] % all.length];
+    }
+  } else {
+    for (let i = 0; i < remaining; i++) {
+      pwd += all[Math.floor(Math.random() * all.length)];
+    }
+  }
+  return pwd.split('').sort(() => (Math.random() - 0.5)).join('');
+};
+
+const fillWithGenerated = () => {
+  const pwd = generatePassword(8);
+  form.value.password = pwd;
+  form.value.confirmPassword = pwd;
+  generatedPassword.value = pwd;
+  showPassword.value = true;
+  passwordChecked.value = true;
+  passwordCheckOk.value = true;
+  passwordCheckMsg.value = 'Contraseña generada cumple los requisitos.';
+};
+
 const selectUserType = (type) => {
   userType.value = type;
   alertInfo.value = type === "oficina";
@@ -44,6 +86,44 @@ const handleImageUpload = (event) => {
   if (file) {
     form.value.foto = URL.createObjectURL(file);
   }
+};
+
+// validación de complejidad de contraseña ingresada por usuario
+const passwordChecked = ref(false);
+const passwordCheckOk = ref(false);
+const passwordCheckMsg = ref('');
+
+const meetsPolicy = (pwd) => {
+  const hasLen8 = pwd.length === 8;
+  const hasUpper = /[A-Z]/.test(pwd);
+  const hasLower = /[a-z]/.test(pwd);
+  const hasDigit = /\d/.test(pwd);
+  return { ok: hasLen8 && hasUpper && hasLower && hasDigit, hasLen8, hasUpper, hasLower, hasDigit };
+};
+
+const checkPassword = () => {
+  const res = meetsPolicy(form.value.password || '');
+  passwordChecked.value = true;
+  passwordCheckOk.value = res.ok;
+  if (res.ok) {
+    passwordCheckMsg.value = 'La contraseña cumple con los requisitos.';
+    // Autocompletar Confirmar contraseña solo si aprueba
+    form.value.confirmPassword = form.value.password;
+  } else {
+    const parts = [];
+    if (!res.hasLen8) parts.push('exactamente 8 caracteres');
+    if (!res.hasUpper) parts.push('al menos 1 mayúscula');
+    if (!res.hasLower) parts.push('al menos 1 minúscula');
+    if (!res.hasDigit) parts.push('al menos 1 número');
+    passwordCheckMsg.value = 'Falta: ' + parts.join(', ');
+  }
+};
+
+const onPasswordInput = () => {
+  generatedPassword.value = null;
+  passwordChecked.value = false;
+  passwordCheckOk.value = false;
+  passwordCheckMsg.value = '';
 };
 
 // cargar lista de clubs (si existe endpoint)
@@ -77,8 +157,8 @@ const handleRegister = async () => {
     return;
   }
 
-  if (form.value.password.length < 8) {
-    alertError.value = "La contraseña debe tener al menos 8 caracteres";
+  if (form.value.password.length !== 8) {
+    alertError.value = "La contraseña debe tener exactamente 8 caracteres";
     return;
   }
 
@@ -160,6 +240,8 @@ const resetForm = () => {
   userType.value = "oficina";
   alertError.value = "";
   alertInfo.value = true;
+  generatedPassword.value = null;
+  showPassword.value = false;
 };
 
 const closeModalAndReset = () => {
@@ -340,25 +422,65 @@ const goToLogin = () => {
             />
           </div>
           <div class="col-md-4">
-            <input
-              v-model="form.password"
-              type="password"
-              class="form-control"
-              placeholder="Contraseña"
-              minlength="8"
-              required
-            />
+            <div class="input-group">
+              <input
+                v-model="form.password"
+                @input="onPasswordInput"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-control"
+                placeholder="Contraseña (8 caracteres)"
+                minlength="8"
+                maxlength="8"
+                required
+              />
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                @click="showPassword = !showPassword"
+                :title="showPassword ? 'Ocultar' : 'Mostrar'"
+              >
+                <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+              </button>
+            </div>
+            <small class="text-muted">Sugerida: alfanumérica de 8 caracteres</small>
           </div>
           <div class="col-md-4">
-            <input
-              v-model="form.confirmPassword"
-              type="password"
-              class="form-control"
-              placeholder="Confirmar contraseña"
-              minlength="8"
-              required
-            />
+            <div class="input-group">
+              <input
+                v-model="form.confirmPassword"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-control"
+                placeholder="Confirmar contraseña (8 caracteres)"
+                minlength="8"
+                maxlength="8"
+                required
+              />
+              <button
+                v-if="!form.password"
+                class="btn btn-outline-success"
+                type="button"
+                @click="fillWithGenerated"
+                title="Generar contraseña segura (8)"
+              >
+                Generar
+              </button>
+              <button
+                v-else
+                class="btn btn-outline-primary"
+                type="button"
+                @click="checkPassword"
+                title="Comprobar que cumple requisitos"
+              >
+                Comprobar
+              </button>
+            </div>
           </div>
+        </div>
+        <div v-if="passwordChecked" class="mt-1">
+          <small :class="passwordCheckOk ? 'text-success' : 'text-danger'">
+            <i :class="passwordCheckOk ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
+            {{ passwordCheckMsg }}
+          </small>
         </div>
 
         <!-- Botones -->
@@ -429,6 +551,19 @@ const goToLogin = () => {
               </span>
             </p>
             <p class="mt-2">Usuario registrado correctamente.</p>
+            <div v-if="generatedPassword" class="alert alert-warning small text-start mt-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <span><strong>Contraseña generada:</strong> {{ generatedPassword }}</span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="navigator.clipboard && navigator.clipboard.writeText(generatedPassword)"
+                >
+                  Copiar
+                </button>
+              </div>
+              <div class="mt-1">Guárdala en un lugar seguro.</div>
+            </div>
           </div>
           <div class="modal-footer">
             <button

@@ -84,7 +84,9 @@
               class="user-input"
               v-model="password"
               type="password"
-              placeholder="Contraseña"
+              placeholder="Contraseña (8 caracteres)"
+              minlength="8"
+              maxlength="8"
               required
             />
             <svg
@@ -160,6 +162,10 @@ export default {
       this.errorMessage = "";
       if (!this.usuario || !this.password) {
         this.showMessage("error", "Por favor, completa todos los campos");
+        return;
+      }
+      if (this.password.length !== 8) {
+        this.showMessage("error", "La contraseña debe tener exactamente 8 caracteres");
         return;
       }
       try {
