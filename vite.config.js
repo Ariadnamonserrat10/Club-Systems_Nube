@@ -7,9 +7,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost',
+        target: 'https://clubsystem-backend-ghexckbjh4dxhgff.canadacentral-01.azurewebsites.net',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/Backend'),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
