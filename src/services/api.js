@@ -1,12 +1,15 @@
 // src/services/api.js
 // Servicio simple para consumir el backend PHP de Clubs y Alumnos
+import { BACKEND } from './backend';
 
-const CLUBS_BASE = '/api/clubs.php';
-const ALUMNOS_BASE = '/api/Alumnos.php';
-const CARRERAS_BASE = '/api/carreras.php';
-const ASISTENCIAS_BASE = '/api/asistencias.php';
-const USUARIOS_BASE = '/api/Usuarios.php';
-const UPLOAD_BASE = '/api/upload.php';
+const CLUBS_BASE = `${BACKEND}/Clubs.php`;
+const ALUMNOS_BASE = `${BACKEND}/Alumnos.php`;
+const CARRERAS_BASE = `${BACKEND}/carreras.php`;
+const ASISTENCIAS_BASE = `${BACKEND}/asistencias.php`;
+const USUARIOS_BASE = `${BACKEND}/Usuarios.php`;
+const UPLOAD_BASE = `${BACKEND}/upload.php`;
+const GET_MONITORES_BASE = `${BACKEND}/getMonitores.php`;
+const ASIGNAR_MONITOR_BASE = `${BACKEND}/asignarMonitor.php`;
 
 async function toJson(res) {
   const text = await res.text();
@@ -130,7 +133,7 @@ export async function uploadFoto(file) {
 
 // Monitores por Club
 export async function getMonitoresPorClub(clubId) {
-  const url = `/api/getMonitores.php?club_id=${encodeURIComponent(clubId)}`;
+  const url = `${GET_MONITORES_BASE}?club_id=${encodeURIComponent(clubId)}`;
   const res = await fetch(url, { method: 'GET' });
   const data = await toJson(res);
   if (!res.ok) {
@@ -142,7 +145,7 @@ export async function getMonitoresPorClub(clubId) {
 
 // Obtener todos los monitores con sus clubs asignados
 export async function getAllMonitoresWithClubs() {
-  const res = await fetch(`/api/Usuarios.php`, { method: 'GET' });
+  const res = await fetch(USUARIOS_BASE, { method: 'GET' });
   const data = await toJson(res);
   if (!res.ok) {
     console.error('Error fetching all usuarios:', res.status, data);
@@ -154,7 +157,7 @@ export async function getAllMonitoresWithClubs() {
 
 // Asignar monitor a un club
 export async function asignarMonitorAClub(monitorId, clubId) {
-  const url = `/api/asignarMonitor.php`;
+  const url = ASIGNAR_MONITOR_BASE;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

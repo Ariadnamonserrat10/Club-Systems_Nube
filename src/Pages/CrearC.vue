@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { getCarreras } from "../services/api";
+import { BACKEND } from "../services/backend";
 
 const router = useRouter();
 
@@ -129,7 +130,7 @@ const onPasswordInput = () => {
 // cargar lista de clubs (si existe endpoint)
 onMounted(async () => {
   try {
-    const res = await axios.get("/api/getClubs.php");
+    const res = await axios.get(`${BACKEND}/getClubs.php`);
     if (res.data?.status === "success" && Array.isArray(res.data.data)) {
       clubsList.value = res.data.data;
     }
@@ -184,7 +185,7 @@ const handleRegister = async () => {
     };
 
     console.log("Enviando payload:", payload);
-    const response = await axios.post("/api/Registrar.php", payload);
+    const response = await axios.post(`${BACKEND}/Registrar.php`, payload);
     console.log("Respuesta Registrar.php:", response.status, response.data);
 
     if (response.data.status === "success") {
