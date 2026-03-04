@@ -105,6 +105,7 @@
 <script>
 import axios from "axios";
 import { getAsistenciasPorClub, crearFechaAsistencias, actualizarAsistencia, getAlumnos } from "../services/api";
+import { BACKEND } from "../services/backend";
 
 export default {
   name: "Monitor",
@@ -156,7 +157,7 @@ export default {
         if (!usuarioId) return;
 
         const response = await axios.get(
-          `/api/obtenerUsuario.php?id=${usuarioId}`
+          `${BACKEND}/obtenerUsuario.php?id=${usuarioId}`
         );
 
         if (response.data?.status === "success") {
@@ -189,7 +190,7 @@ export default {
         // 1) Cargar alumnos por club (garantiza lista aunque no haya asistencias)
         let alumnosClub = [];
         try {
-          const res = await fetch(`/api/Alumnos.php?club_id=${encodeURIComponent(clubId)}`);
+          const res = await fetch(`${BACKEND}/Alumnos.php?club_id=${encodeURIComponent(clubId)}`);
           const json = await res.json();
           console.log('Respuesta de Alumnos.php:', json);
           if (res.ok && json && Array.isArray(json.data)) {
@@ -246,7 +247,7 @@ export default {
 
     async cargarClubs() {
       try {
-        const res = await axios.get("/api/getClubs.php");
+        const res = await axios.get(`${BACKEND}/getClubs.php`);
         if (res.data?.status === "success" && Array.isArray(res.data.data)) {
           this.clubsList = res.data.data;
         } else {
@@ -370,7 +371,7 @@ export default {
       try {
         const usuarioId = sessionStorage.getItem("usuarioId");
         const payload = { usuarioId: Number(usuarioId), club_id: Number(this.selectedClubId) };
-        const res = await axios.post("/api/asignarClub.php", payload, {
+        const res = await axios.post(`${BACKEND}/asignarClub.php`, payload, {
           headers: { "Content-Type": "application/json" }
         });
 

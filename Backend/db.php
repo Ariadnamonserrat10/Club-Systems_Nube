@@ -1,10 +1,12 @@
 <?php
-$host = "localhost";
-$user = "root";
-$pass = "";
+$host = "clubsystem.mysql.database.azure.com";
+$user = "clubadmin";
+$pass = "Computo2026";
 $dbname = "sistema_clubs";
+$port = 3306;
 
-$conexion = new mysqli($host, $user, $pass, $dbname);
+$conexion = new mysqli($host, $user, $pass, $dbname, $port);
+$conexion->ssl_set(NULL, NULL, NULL, NULL, NULL);
 
 if ($conexion->connect_error) {
     http_response_code(500);
@@ -13,10 +15,8 @@ if ($conexion->connect_error) {
 
 $conexion->set_charset("utf8mb4");
 
-// Alias opcional para compatibilidad
 $conn = $conexion;
 
-// Función no intrusiva para exponer mysqli de forma estándar
 if (!function_exists('getMysqli')) {
     function getMysqli() {
         global $conexion;

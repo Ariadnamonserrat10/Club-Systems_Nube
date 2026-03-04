@@ -131,6 +131,7 @@
 
 <script>
 import axios from 'axios';
+import { BACKEND } from '../services/backend';
 
 export default {
   name: "Login",
@@ -175,7 +176,7 @@ export default {
         });
 
         const response = await axios.post(
-          "/api/Login.php",
+          `${BACKEND}/Login.php`,
           {
             usuario: this.usuario,
             password: this.password,
