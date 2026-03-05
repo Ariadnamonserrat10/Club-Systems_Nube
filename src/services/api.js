@@ -2,7 +2,7 @@
 // Servicio simple para consumir el backend PHP de Clubs y Alumnos
 import { BACKEND } from './backend';
 
-const CLUBS_BASE = `${BACKEND}/Clubs.php`;
+const CLUBS_BASE = `${BACKEND}/getClubs.php`;
 const ALUMNOS_BASE = `${BACKEND}/Alumnos.php`;
 const CARRERAS_BASE = `${BACKEND}/carreras.php`;
 const ASISTENCIAS_BASE = `${BACKEND}/asistencias.php`;

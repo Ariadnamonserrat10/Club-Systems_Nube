@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://clubsystem-backend-ghexckbjh4dxhgff.canadacentral-01.azurewebsites.net',
+        target: 'https://club-backend-XXXXXX.run.app', // Reemplaza con la URL real de Cloud Run
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

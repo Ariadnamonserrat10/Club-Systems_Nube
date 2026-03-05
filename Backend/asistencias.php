@@ -1,18 +1,16 @@
 <?php
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-header('Content-Type: application/json; charset=utf-8');
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=utf-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
+    http_response_code(200);
+    exit();
 }
 
-require_once __DIR__ . '/db.php';
+include __DIR__ . "/db.php";
 
 if (!isset($conexion) || !($conexion instanceof mysqli)) {
   if (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
