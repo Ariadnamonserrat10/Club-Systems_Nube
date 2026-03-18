@@ -1,9 +1,9 @@
 <?php
-$host = '35.222.207.41';
-$db   = 'sistema_clubs';
-$user = 'root';
-$pass = 'Admin1234';
-$port = 3306;
+$host = getenv('DB_HOST') ?: '35.222.207.41';
+$db   = getenv('DB_NAME') ?: 'sistema_clubs';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: 'Admin1234';
+$port = (int)(getenv('DB_PORT') ?: 3306);
 
 $conexion = new mysqli($host, $user, $pass, $db, $port);
 $conexion->set_charset('utf8mb4');
