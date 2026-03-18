@@ -2,6 +2,16 @@
   <div>
     <h3>Gestionar usuarios</h3>
 
+    <div
+      v-if="localMsg"
+      class="alert alert-dismissible fade show"
+      :class="localMsgType === 'success' ? 'alert-success' : 'alert-danger'"
+      role="alert"
+    >
+      {{ localMsg }}
+      <button type="button" class="btn-close" @click="clearLocalMsg"></button>
+    </div>
+
     <div class="row mb-3">
       <div class="col-md-4">
         <select v-model="filterTipo" class="form-select">
@@ -126,7 +136,9 @@ export default {
       selectedId: null,
       fotoFile: null,
       previewFoto: '',
-      placeholder: 'https://cdn-icons-png.flaticon.com/512/847/847969.png'
+      placeholder: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
+      localMsg: '',
+      localMsgType: 'error'
     };
   },
   computed: {
@@ -141,6 +153,27 @@ export default {
     }
   },
   methods: {
+    notifyError(msg) {
+      if (this.$root && typeof this.$root.showError === 'function') {
+        this.$root.showError(msg);
+        return;
+      }
+      this.localMsgType = 'error';
+      this.localMsg = msg;
+      setTimeout(() => this.clearLocalMsg(), 4000);
+    },
+    notifySuccess(msg) {
+      if (this.$root && typeof this.$root.showToast === 'function') {
+        this.$root.showToast(msg);
+        return;
+      }
+      this.localMsgType = 'success';
+      this.localMsg = msg;
+      setTimeout(() => this.clearLocalMsg(), 2500);
+    },
+    clearLocalMsg() {
+      this.localMsg = '';
+    },
     normalizarTexto(valor) {
       const limpio = (valor || '')
         .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
@@ -180,7 +213,7 @@ export default {
         }));
       } catch (e) {
         console.error(e);
-        alert(e.message || 'Error al cargar usuarios');
+        this.notifyError(e.message || 'Error al cargar usuarios');
       }
     },
     openEdit(u) {
@@ -223,9 +256,10 @@ export default {
         await updateUsuario(this.selectedId, payload);
         await this.loadUsuarios();
         this.closeModal();
+        this.notifySuccess('Usuario actualizado correctamente');
       } catch (e) {
         console.error(e);
-        alert(e.message || 'Error al guardar');
+        this.notifyError(e.message || 'Error al guardar');
       }
     },
     async onDelete(u) {
@@ -233,9 +267,10 @@ export default {
       try {
         await deleteUsuario(u.id);
         await this.loadUsuarios();
+        this.notifySuccess('Usuario eliminado correctamente');
       } catch (e) {
         console.error(e);
-        alert(e.message || 'Error al eliminar');
+        this.notifyError(e.message || 'Error al eliminar');
       }
     }
   },
