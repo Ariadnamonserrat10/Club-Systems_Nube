@@ -1,1 +1,1 @@
-export const BACKEND = import.meta.env.VITE_API_URL;
+export const BACKEND = "https://clubsystem-backend-ghexckbjh4dxhgff.canadacentral-01.azurewebsites.net";

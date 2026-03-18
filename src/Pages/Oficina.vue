@@ -146,6 +146,7 @@ import Auditoria from "../components/Auditoria.vue";
 import Listas from "../components/Listas.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
 import axios from "axios";
+import { BACKEND } from "../services/backend";
 
 export default {
   name: "Oficina",
@@ -244,7 +245,7 @@ export default {
        }
 
        const response = await axios.get(
-         `BACKENDobtenerUsuario.php?id=${usuarioId}`
+         `${BACKEND}/obtenerUsuario.php?id=${usuarioId}`
        );
 
        if (response.data.status === "success") {

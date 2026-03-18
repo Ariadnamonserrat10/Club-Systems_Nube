@@ -1,1 +1,1 @@
-{"routes":[{"route":"BACKEND*","rewrite":"https://clubsystem-backend-ghexckbjh4dxhgff.canadacentral-01.azurewebsites.net/*"}],"navigationFallback":{"rewrite":"/index.html"}}
+{"routes":[],"navigationFallback":{"rewrite":"/index.html"}}
