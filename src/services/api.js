@@ -10,7 +10,11 @@ async function request(url, options = {}) {
   catch { data = { raw: text }; }
 
   if (!res.ok) {
-    throw new Error(data?.message || data?.error || 'Error en la petición');
+    const details = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
+    const detailMsg = details.length ? details.join('. ') : '';
+    const baseMsg = data?.message || data?.error || 'Error en la petición';
+    const finalMsg = detailMsg || baseMsg;
+    throw new Error(finalMsg);
   }
 
   return data;

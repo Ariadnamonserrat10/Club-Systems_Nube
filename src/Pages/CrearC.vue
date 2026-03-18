@@ -254,15 +254,22 @@ const handleRegister = async () => {
       };
       showSuccessModal.value = true;
     } else {
+      const details = Array.isArray(response.data?.details)
+        ? response.data.details.filter(Boolean).join('. ')
+        : '';
       alertError.value =
-        response.data.message || "Error al registrar el usuario.";
+        details || response.data.message || "Error al registrar el usuario.";
     }
   } catch (error) {
     console.error("Axios error completo:", error);
     if (error.response) {
       console.error("Response status:", error.response.status);
       console.error("Response data:", error.response.data);
+      const details = Array.isArray(error.response.data?.details)
+        ? error.response.data.details.filter(Boolean).join('. ')
+        : '';
       alertError.value =
+        details ||
         error.response.data?.message ||
         error.response.data?.error ||
         JSON.stringify(error.response.data) ||
