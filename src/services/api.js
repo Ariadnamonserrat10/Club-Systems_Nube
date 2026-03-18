@@ -9,11 +9,13 @@ async function request(url, options = {}) {
   try { data = JSON.parse(text); } 
   catch { data = { raw: text }; }
 
-  if (!res.ok) {
-    const details = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
-    const detailMsg = details.length ? details.join('. ') : '';
-    const baseMsg = data?.message || data?.error || 'Error en la petición';
-    const finalMsg = detailMsg || baseMsg;
+  const details = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
+  const detailMsg = details.length ? details.join('. ') : '';
+  const baseMsg = data?.message || data?.error || 'Error en la petición';
+  const finalMsg = detailMsg || baseMsg;
+
+  // Algunos endpoints devuelven status=error con HTTP 200.
+  if (!res.ok || data?.status === 'error') {
     throw new Error(finalMsg);
   }
 
