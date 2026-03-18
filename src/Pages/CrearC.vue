@@ -325,6 +325,12 @@ const goToLogin = () => {
       <form @submit.prevent="handleRegister" class="small">
         <pre>{{ clubs }}</pre>
 
+        <div v-for="club in clubs" :key="club.id">
+          <pre>{{ club }}</pre>
+          <h3>{{ club.nombre }}</h3>
+          <p>{{ club.descripcion }}</p>
+        </div>
+
         <!-- Tipo de Usuario -->
         <div class="mb-3 text-center">
           <label class="form-label fw-semibold">Tipo de Usuario</label>
