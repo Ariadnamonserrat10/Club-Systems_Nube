@@ -381,14 +381,15 @@ export default {
           id_responsable: club.id_responsable ?? null,
         };
         const saved = await createClub(payload);
+        const savedRow = saved?.data ?? saved;
         const mapped = {
-          id: Number(saved.id),
-          nombre: saved.nombre,
-          descripcion: saved.descripcion,
-          cupo: saved.cupo_limite,
+          id: Number(savedRow.id),
+          nombre: savedRow.nombre,
+          descripcion: savedRow.descripcion,
+          cupo: savedRow.cupo_limite,
           ocupados: 0,
-          id_responsable: saved.id_responsable,
-          creado_en: saved.creado_en,
+          id_responsable: savedRow.id_responsable,
+          creado_en: savedRow.creado_en,
         };
         this.clubs.unshift(mapped);
         this.logAction(
@@ -415,14 +416,15 @@ export default {
           id_responsable: club.id_responsable ?? current.id_responsable,
         };
         const saved = await updateClub(current.id, payload);
+        const savedRow = saved?.data ?? saved;
         const mapped = {
-          id: Number(saved.id),
-          nombre: saved.nombre,
-          descripcion: saved.descripcion,
-          cupo: saved.cupo_limite,
+          id: Number(savedRow.id),
+          nombre: savedRow.nombre,
+          descripcion: savedRow.descripcion,
+          cupo: savedRow.cupo_limite,
           ocupados: current.ocupados || 0,
-          id_responsable: saved.id_responsable,
-          creado_en: saved.creado_en,
+          id_responsable: savedRow.id_responsable,
+          creado_en: savedRow.creado_en,
         };
         this.clubs[index] = mapped;
         this.logAction(

@@ -17,7 +17,7 @@ async function request(url, options = {}) {
 }
 
 // ================= BASE URLs =================
-const CLUBS = `${BACKEND}/getClubs.php`;
+const CLUBS = `${BACKEND}/Clubs.php`;
 const ALUMNOS = `${BACKEND}/Alumnos.php`;
 const CARRERAS = `${BACKEND}/carreras.php`;
 const ASISTENCIAS = `${BACKEND}/asistencias.php`;

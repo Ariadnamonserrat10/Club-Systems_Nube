@@ -280,7 +280,7 @@ export default {
 
     async cargarClubs() {
       try {
-        const res = await axios.get(`${BACKEND}/getClubs.php`);
+        const res = await axios.get(`${BACKEND}/Clubs.php`);
         if (res.data?.status === "success" && Array.isArray(res.data.data)) {
           console.log("RESPUESTA:", res.data);
           console.log("CLUBS ARRAY:", res.data.data);
