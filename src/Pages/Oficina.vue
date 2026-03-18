@@ -297,6 +297,7 @@ export default {
         
         // Asignar monitores a sus clubs
         for (const monitor of todosLosMonitores) {
+          console.log(monitor.imagen);
           const club = this.clubs.find(c => c.id === Number(monitor.club_asignado));
           if (club) {
             club.monitores.push({
