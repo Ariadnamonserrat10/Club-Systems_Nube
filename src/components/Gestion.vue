@@ -56,15 +56,15 @@
             <div class="row g-2">
               <div class="col-md-4">
                 <label class="form-label">Nombre</label>
-                <input v-model="form.nombre" class="form-control"/>
+                <input v-model="form.nombre" class="form-control" @input="soloTexto('nombre')"/>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Apellido P.</label>
-                <input v-model="form.apellidoP" class="form-control"/>
+                <input v-model="form.apellidoP" class="form-control" @input="soloTexto('apellidoP')"/>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Apellido M.</label>
-                <input v-model="form.apellidoM" class="form-control"/>
+                <input v-model="form.apellidoM" class="form-control" @input="soloTexto('apellidoM')"/>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Usuario</label>
@@ -86,6 +86,10 @@
               <div class="col-md-6">
                 <label class="form-label">Nueva contraseña (opcional)</label>
                 <input v-model="form.password" type="password" class="form-control"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Teléfono</label>
+                <input v-model="form.telefono" class="form-control" @input="soloNumeros('telefono')"/>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Foto (desde dispositivo)</label>
@@ -137,6 +141,23 @@ export default {
     }
   },
   methods: {
+    normalizarTexto(valor) {
+      const limpio = (valor || '')
+        .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trimStart();
+      return limpio
+        .split(' ')
+        .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+        .join(' ')
+        .trimEnd();
+    },
+    soloTexto(campo) {
+      this.form[campo] = this.normalizarTexto(this.form[campo]);
+    },
+    soloNumeros(campo) {
+      this.form[campo] = (this.form[campo] || '').replace(/\D/g, '');
+    },
     resolveFotoUrl(foto) {
       if (!foto || typeof foto !== 'string') return '';
       if (foto.startsWith('blob:')) return '';
@@ -186,7 +207,14 @@ export default {
           const up = await uploadFoto(this.fotoFile);
           fotoPath = up.file; // ruta relativa devuelta por el backend
         }
-        const payload = { ...this.form, foto: fotoPath };
+        const payload = {
+          ...this.form,
+          nombre: this.normalizarTexto(this.form.nombre),
+          apellidoP: this.normalizarTexto(this.form.apellidoP),
+          apellidoM: this.normalizarTexto(this.form.apellidoM),
+          telefono: (this.form.telefono || '').replace(/\D/g, ''),
+          foto: fotoPath
+        };
         if (!payload.password) delete payload.password; // no enviar si está vacío
         await updateUsuario(this.selectedId, payload);
         await this.loadUsuarios();

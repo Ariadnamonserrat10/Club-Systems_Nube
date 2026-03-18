@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
+require_once __DIR__ . "/validation.php";
 
 $input = json_decode(file_get_contents("php://input"), true);
 
@@ -33,9 +34,9 @@ if (!$input) {
 }
 
 // Normalizar campos
-$nombre = trim($input['nombre'] ?? '');
-$apellidoP = trim($input['apellidoP'] ?? '');
-$apellidoM = trim($input['apellidoM'] ?? '');
+$nombre = to_title_case($input['nombre'] ?? '');
+$apellidoP = to_title_case($input['apellidoP'] ?? '');
+$apellidoM = to_title_case($input['apellidoM'] ?? '');
 $numeroControl = trim($input['numeroControl'] ?? '');
 $telefono = trim($input['telefono'] ?? '');
 $carrera_id = isset($input['carrera']) ? (int)$input['carrera'] : null;
@@ -47,9 +48,39 @@ $club_asignado = isset($input['club_asignado']) ? (int)$input['club_asignado'] :
 $foto = trim($input['foto'] ?? '');
 
 // Validaciones básicas
-if ($nombre === '' || $apellidoP === '' || $usuario === '' || $password_raw === '') {
+$errors = [];
+
+if ($nombre === '' || !is_text_only($nombre) || !starts_with_uppercase_letter($nombre)) {
+    $errors[] = 'nombre es requerido, debe ser texto y comenzar con mayúscula';
+}
+if ($apellidoP === '' || !is_text_only($apellidoP) || !starts_with_uppercase_letter($apellidoP)) {
+    $errors[] = 'apellidoP es requerido, debe ser texto y comenzar con mayúscula';
+}
+if ($apellidoM !== '' && (!is_text_only($apellidoM) || !starts_with_uppercase_letter($apellidoM))) {
+    $errors[] = 'apellidoM debe ser texto y comenzar con mayúscula';
+}
+if ($usuario === '' || $password_raw === '') {
+    $errors[] = 'usuario y password son requeridos';
+}
+if ($tipo !== 'OFICINA' && $tipo !== 'MONITOR') {
+    $errors[] = 'tipo inválido, solo OFICINA o MONITOR';
+}
+if ($numeroControl !== '' && !is_digits_only($numeroControl, 8, 8, false)) {
+    $errors[] = 'numeroControl debe tener exactamente 8 dígitos';
+}
+if ($telefono !== '' && !is_digits_only($telefono, 7, 15, false)) {
+    $errors[] = 'telefono debe contener solo números (7-15 dígitos)';
+}
+
+if ($tipo === 'MONITOR') {
+    if ($numeroControl === '' || $telefono === '' || !$carrera_id || !$semestre_id) {
+        $errors[] = 'Para MONITOR son obligatorios numeroControl, telefono, carrera y semestre';
+    }
+}
+
+if (!empty($errors)) {
     http_response_code(422);
-    echo json_encode(["status" => "error", "message" => "Faltan campos requeridos"]);
+    echo json_encode(["status" => "error", "message" => "Validación", "details" => $errors]);
     exit;
 }
 

@@ -42,7 +42,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <input v-model="localClub.nombre" class="form-control mb-2" placeholder="Nombre del club" />
+            <input v-model="localClub.nombre" class="form-control mb-2" placeholder="Nombre del club" @input="soloTextoClub" />
             <input v-model="localClub.descripcion" class="form-control mb-2" placeholder="Descripción" />
             <input v-model.number="localClub.cupo" type="number" min="1" class="form-control mb-2" placeholder="Cupo máximo" />
           </div>
@@ -150,6 +150,20 @@ export default {
     }
   },
   methods: {
+    normalizarTexto(valor) {
+      const limpio = (valor || '')
+        .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trimStart();
+      return limpio
+        .split(' ')
+        .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+        .join(' ')
+        .trimEnd();
+    },
+    soloTextoClub() {
+      this.localClub.nombre = this.normalizarTexto(this.localClub.nombre);
+    },
     openModal() {
       this.editingIndex = null;
       this.localClub = { nombre: '', descripcion: '', cupo: 0 };

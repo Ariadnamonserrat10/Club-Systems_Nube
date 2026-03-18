@@ -142,6 +142,20 @@ const onPasswordInput = () => {
   passwordCheckMsg.value = '';
 };
 
+const normalizarTexto = (valor) => {
+  const limpio = String(valor || '')
+    .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return limpio
+    .split(' ')
+    .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+    .join(' ')
+    .trim();
+};
+
+const soloNumeros = (valor) => String(valor || '').replace(/\D/g, '');
+
 // cargar lista de clubs (si existe endpoint)
 const obtenerClubs = async () => {
   try {
@@ -172,6 +186,12 @@ onMounted(async () => {
 // 🔹 Conexión con PHP y MySQL (corregida y completa)
 const handleRegister = async () => {
   alertError.value = "";
+
+  form.value.nombre = normalizarTexto(form.value.nombre);
+  form.value.apellidoP = normalizarTexto(form.value.apellidoP);
+  form.value.apellidoM = normalizarTexto(form.value.apellidoM);
+  form.value.numeroControl = soloNumeros(form.value.numeroControl);
+  form.value.telefono = soloNumeros(form.value.telefono);
 
   if (form.value.password !== form.value.confirmPassword) {
     alertError.value = "Las contraseñas no coinciden";
