@@ -1,5 +1,9 @@
 <?php
 
+if (!function_exists('mb_strlen')) {
+    function mb_strlen($str, $encoding = null) { return strlen($str); }
+}
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
