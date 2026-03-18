@@ -1,14 +1,13 @@
-# Use the official PHP image with Apache
 FROM php:8.1-apache
 
-# Copy the backend code to the container
+# Cambiar Apache al puerto 8080 que requiere Cloud Run
+RUN sed -i 's/80/8080/g' /etc/apache2/ports.conf && \
+    sed -i 's/:80>/:8080>/g' /etc/apache2/sites-enabled/000-default.conf
+
 COPY Backend/ /var/www/html/
 
-# Install mysqli extension if not included
 RUN docker-php-ext-install mysqli
 
-# Expose port 80
-EXPOSE 80
+EXPOSE 8080
 
-# Start Apache
 CMD ["apache2-foreground"]
