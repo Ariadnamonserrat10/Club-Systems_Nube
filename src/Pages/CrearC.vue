@@ -147,6 +147,7 @@ onMounted(async () => {
   try {
     const res = await axios.get(`${BACKEND}/getClubs.php`);
     if (res.data?.status === "success" && Array.isArray(res.data.data)) {
+      console.log("CLUBS:", res.data.data);
       clubsList.value = res.data.data;
     }
   } catch (err) {

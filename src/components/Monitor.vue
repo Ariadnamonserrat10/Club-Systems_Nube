@@ -41,6 +41,7 @@
     <!-- CONTENEDOR DE ASISTENCIAS -->
     <div class="card shadow-sm p-3 flex-grow-1 overflow-auto" style="max-height: 70vh;">
       <h5 class="text-secondary mb-3">Asistencias del Club</h5>
+      <pre>{{ clubs }}</pre>
 
       <!-- AGREGAR NUEVA FECHA -->
       <div class="mb-3">
@@ -132,6 +133,9 @@ export default {
     };
   },
   computed: {
+    clubs() {
+      return this.clubsList;
+    },
     alumnosClub() {
       // Ya vienen filtrados por club desde backend; asegurar asistencias y faltas
       return (this.alumnosData || []).map((a) => {
@@ -256,6 +260,7 @@ export default {
       try {
         const res = await axios.get(`${BACKEND}/getClubs.php`);
         if (res.data?.status === "success" && Array.isArray(res.data.data)) {
+          console.log("CLUBS:", res.data.data);
           this.clubsList = res.data.data;
         } else {
           console.warn("No se obtuvieron clubs:", res.data);
