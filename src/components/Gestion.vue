@@ -68,7 +68,7 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label">Usuario</label>
-                <input v-model="form.usuario" class="form-control"/>
+                <input v-model="form.usuario" class="form-control" @input="soloUsuario('usuario')"/>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Tipo</label>
@@ -158,6 +158,9 @@ export default {
     soloNumeros(campo) {
       this.form[campo] = (this.form[campo] || '').replace(/\D/g, '');
     },
+    soloUsuario(campo) {
+      this.form[campo] = (this.form[campo] || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
+    },
     resolveFotoUrl(foto) {
       if (!foto || typeof foto !== 'string') return '';
       if (foto.startsWith('blob:')) return '';
@@ -212,6 +215,7 @@ export default {
           nombre: this.normalizarTexto(this.form.nombre),
           apellidoP: this.normalizarTexto(this.form.apellidoP),
           apellidoM: this.normalizarTexto(this.form.apellidoM),
+          usuario: (this.form.usuario || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, ''),
           telefono: (this.form.telefono || '').replace(/\D/g, ''),
           foto: fotoPath
         };

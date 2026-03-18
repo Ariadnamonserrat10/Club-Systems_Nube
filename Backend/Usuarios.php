@@ -112,6 +112,13 @@ try {
       }
     }
 
+    if (array_key_exists('usuario', $payload)) {
+      $payload['usuario'] = trim((string)$payload['usuario']);
+      if (!is_username_letters_only($payload['usuario'], false)) {
+        $errors[] = 'usuario solo debe contener letras, sin espacios ni símbolos';
+      }
+    }
+
     foreach (['carrera_id', 'semestre_id', 'club_asignado'] as $numericField) {
       if (array_key_exists($numericField, $payload) && $payload[$numericField] !== null && $payload[$numericField] !== '') {
         if (filter_var($payload[$numericField], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {

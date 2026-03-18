@@ -58,10 +58,10 @@ try {
       if (!is_array($payload)) $payload = [];
 
       $nombre = isset($payload['nombre']) ? to_title_case($payload['nombre']) : '';
-      $descripcion = isset($payload['descripcion']) ? $payload['descripcion'] : null;
+      $descripcion = isset($payload['descripcion']) ? to_title_case($payload['descripcion']) : null;
       $cupo_limite = null;
       if (array_key_exists('cupo_limite', $payload)) {
-        $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 50]]);
         if ($cupoRaw !== false) {
           $cupo_limite = (int)$cupoRaw;
         }
@@ -77,8 +77,14 @@ try {
       if ($nombre !== '' && (!is_text_only($nombre) || !starts_with_uppercase_letter($nombre))) {
         $errors[] = 'El nombre del club solo debe contener letras y espacios, e iniciar con mayúscula';
       }
-      if (!is_int($cupo_limite) || $cupo_limite < 0) {
-        $errors[] = 'cupo_limite es requerido y debe ser un entero >= 0';
+      if (!is_title_case_text($nombre)) {
+        $errors[] = 'El nombre del club debe tener formato correcto: solo primera letra mayúscula por palabra';
+      }
+      if ($descripcion === null || $descripcion === '' || !is_text_only($descripcion) || !is_title_case_text($descripcion)) {
+        $errors[] = 'La descripción del club debe ser solo texto, con primera letra mayúscula';
+      }
+      if (!is_int($cupo_limite)) {
+        $errors[] = 'cupo_limite es requerido y debe ser un entero entre 1 y 50';
       }
       if (!empty($errors)) {
         http_response_code(422);
@@ -137,15 +143,20 @@ try {
         $params[':nombre'] = [$nombre, PDO::PARAM_STR];
       }
       if (array_key_exists('descripcion', $payload)) {
-        $descripcion = $payload['descripcion'];
+        $descripcion = to_title_case((string)$payload['descripcion']);
+        if ($descripcion === '' || !is_text_only($descripcion) || !is_title_case_text($descripcion)) {
+          http_response_code(422);
+          echo json_encode(['error' => 'Validación', 'details' => ['La descripción del club debe ser solo texto, con primera letra mayúscula']]);
+          break;
+        }
         $fields[] = 'descripcion = :descripcion';
         $params[':descripcion'] = [$descripcion, $descripcion === null ? PDO::PARAM_NULL : PDO::PARAM_STR];
       }
       if (isset($payload['cupo_limite'])) {
-        $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 50]]);
         if ($cupoRaw === false) {
           http_response_code(422);
-          echo json_encode(['error' => 'Validación', 'details' => ['cupo_limite debe ser un entero >= 0']]);
+          echo json_encode(['error' => 'Validación', 'details' => ['cupo_limite debe ser un entero entre 1 y 50']]);
           break;
         }
         $cupo_limite = (int)$cupoRaw;
@@ -226,10 +237,10 @@ function handleWithMysqli(mysqli $mysqli)
         $payload = json_decode(file_get_contents('php://input'), true);
         if (!is_array($payload)) $payload = [];
         $nombre = isset($payload['nombre']) ? to_title_case($payload['nombre']) : '';
-        $descripcion = isset($payload['descripcion']) ? $payload['descripcion'] : null;
+        $descripcion = isset($payload['descripcion']) ? to_title_case($payload['descripcion']) : null;
         $cupo_limite = null;
         if (array_key_exists('cupo_limite', $payload)) {
-          $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+          $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 50]]);
           if ($cupoRaw !== false) {
             $cupo_limite = (int)$cupoRaw;
           }
@@ -244,8 +255,14 @@ function handleWithMysqli(mysqli $mysqli)
         if ($nombre !== '' && (!is_text_only($nombre) || !starts_with_uppercase_letter($nombre))) {
           $errors[] = 'El nombre del club solo debe contener letras y espacios, e iniciar con mayúscula';
         }
-        if (!is_int($cupo_limite) || $cupo_limite < 0) {
-          $errors[] = 'cupo_limite es requerido y debe ser un entero >= 0';
+        if (!is_title_case_text($nombre)) {
+          $errors[] = 'El nombre del club debe tener formato correcto: solo primera letra mayúscula por palabra';
+        }
+        if ($descripcion === null || $descripcion === '' || !is_text_only($descripcion) || !is_title_case_text($descripcion)) {
+          $errors[] = 'La descripción del club debe ser solo texto, con primera letra mayúscula';
+        }
+        if (!is_int($cupo_limite)) {
+          $errors[] = 'cupo_limite es requerido y debe ser un entero entre 1 y 50';
         }
         if (!empty($errors)) {
           http_response_code(422);
@@ -306,16 +323,21 @@ function handleWithMysqli(mysqli $mysqli)
           $values[] = $nombre;
         }
         if (array_key_exists('descripcion', $payload)) {
-          $descripcion = $payload['descripcion'];
+          $descripcion = to_title_case((string)$payload['descripcion']);
+          if ($descripcion === '' || !is_text_only($descripcion) || !is_title_case_text($descripcion)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Validación', 'details' => ['La descripción del club debe ser solo texto, con primera letra mayúscula']]);
+            break;
+          }
           $fields[] = 'descripcion = ?';
           $types .= 's';
           $values[] = $descripcion;
         }
         if (isset($payload['cupo_limite'])) {
-          $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+          $cupoRaw = filter_var($payload['cupo_limite'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 50]]);
           if ($cupoRaw === false) {
             http_response_code(422);
-            echo json_encode(['error' => 'Validación', 'details' => ['cupo_limite debe ser un entero >= 0']]);
+            echo json_encode(['error' => 'Validación', 'details' => ['cupo_limite debe ser un entero entre 1 y 50']]);
             break;
           }
           $cupo_limite = (int)$cupoRaw;

@@ -43,8 +43,8 @@
           </div>
           <div class="modal-body">
             <input v-model="localClub.nombre" class="form-control mb-2" placeholder="Nombre del club" @input="soloTextoClub" />
-            <input v-model="localClub.descripcion" class="form-control mb-2" placeholder="Descripción" />
-            <input v-model.number="localClub.cupo" type="number" min="1" class="form-control mb-2" placeholder="Cupo máximo" />
+            <input v-model="localClub.descripcion" class="form-control mb-2" placeholder="Descripción" @input="soloTextoDescripcion" />
+            <input v-model.number="localClub.cupo" type="number" min="1" max="50" class="form-control mb-2" placeholder="Cupo máximo (1-50)" />
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -164,6 +164,9 @@ export default {
     soloTextoClub() {
       this.localClub.nombre = this.normalizarTexto(this.localClub.nombre);
     },
+    soloTextoDescripcion() {
+      this.localClub.descripcion = this.normalizarTexto(this.localClub.descripcion);
+    },
     openModal() {
       this.editingIndex = null;
       this.localClub = { nombre: '', descripcion: '', cupo: 0 };
@@ -179,6 +182,9 @@ export default {
       if (!this.localClub.nombre || !this.localClub.descripcion || this.localClub.cupo <= 0) {
         this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Error', tipo: 'club', descripcion: 'Campos obligatorios' });
         return this.$root.showError ? this.$root.showError('Todos los campos son obligatorios') : null;
+      }
+      if (this.localClub.cupo > 50) {
+        return this.$root.showError ? this.$root.showError('El cupo máximo permitido es 50') : null;
       }
       if (this.editingIndex === null) {
         this.$emit('add-club', { ...this.localClub }, 'Usuario Oficina');

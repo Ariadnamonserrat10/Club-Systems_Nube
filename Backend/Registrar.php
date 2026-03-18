@@ -62,6 +62,9 @@ if ($apellidoM !== '' && (!is_text_only($apellidoM) || !starts_with_uppercase_le
 if ($usuario === '' || $password_raw === '') {
     $errors[] = 'usuario y password son requeridos';
 }
+if ($usuario !== '' && !is_username_letters_only($usuario, false)) {
+    $errors[] = 'usuario solo debe contener letras, sin espacios ni símbolos';
+}
 if ($tipo !== 'OFICINA' && $tipo !== 'MONITOR') {
     $errors[] = 'tipo inválido, solo OFICINA o MONITOR';
 }

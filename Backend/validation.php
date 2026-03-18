@@ -48,6 +48,22 @@ if (!function_exists('starts_with_uppercase_letter')) {
     }
 }
 
+if (!function_exists('is_title_case_text')) {
+    function is_title_case_text($value, $allowEmpty = false) {
+        $value = normalize_spaces($value);
+        if ($value === '') return $allowEmpty;
+        return preg_match('/^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)( [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)*$/u', $value) === 1;
+    }
+}
+
+if (!function_exists('is_username_letters_only')) {
+    function is_username_letters_only($value, $allowEmpty = false) {
+        $value = trim((string)$value);
+        if ($value === '') return $allowEmpty;
+        return preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü]+$/u', $value) === 1;
+    }
+}
+
 if (!function_exists('is_digits_only')) {
     function is_digits_only($value, $minLen = null, $maxLen = null, $allowEmpty = false) {
         $value = trim((string)$value);

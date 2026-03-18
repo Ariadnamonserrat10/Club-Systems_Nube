@@ -155,6 +155,7 @@ const normalizarTexto = (valor) => {
 };
 
 const soloNumeros = (valor) => String(valor || '').replace(/\D/g, '');
+const soloUsuarioLetras = (valor) => String(valor || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
 
 // cargar lista de clubs (si existe endpoint)
 const obtenerClubs = async () => {
@@ -192,6 +193,12 @@ const handleRegister = async () => {
   form.value.apellidoM = normalizarTexto(form.value.apellidoM);
   form.value.numeroControl = soloNumeros(form.value.numeroControl);
   form.value.telefono = soloNumeros(form.value.telefono);
+  form.value.usuario = soloUsuarioLetras(form.value.usuario);
+
+  if (!form.value.usuario) {
+    alertError.value = "El usuario solo puede contener letras";
+    return;
+  }
 
   if (form.value.password !== form.value.confirmPassword) {
     alertError.value = "Las contraseñas no coinciden";
