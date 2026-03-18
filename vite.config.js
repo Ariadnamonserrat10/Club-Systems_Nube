@@ -6,9 +6,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://club-backend-XXXXXX.run.app', // Reemplaza con la URL real de Cloud Run
+        target: 'https://club-backend-XXXXXX.BACKEND', // Reemplaza con la URL real de Cloud Run
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/BACKEND, ''),
       },
     },
   },

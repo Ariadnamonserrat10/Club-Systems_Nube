@@ -244,7 +244,7 @@ export default {
        }
 
        const response = await axios.get(
-         `/api/obtenerUsuario.php?id=${usuarioId}`
+         `BACKENDobtenerUsuario.php?id=${usuarioId}`
        );
 
        if (response.data.status === "success") {
