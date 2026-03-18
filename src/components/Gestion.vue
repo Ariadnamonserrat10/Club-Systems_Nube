@@ -126,7 +126,10 @@ export default {
   },
   computed: {
     filteredUsers() {
-      const base = this.list.length ? this.list : (this.usuarios || []);
+      const propUsuarios = Array.isArray(this.usuarios)
+        ? this.usuarios
+        : (Array.isArray(this.usuarios?.data) ? this.usuarios.data : []);
+      const base = this.list.length ? this.list : propUsuarios;
       const arr = base.slice();
       arr.sort((a,b)=> (a.apellidoP||'').localeCompare(b.apellidoP||'') || (a.apellidoM||'').localeCompare(b.apellidoM||'') || (a.nombre||'').localeCompare(b.nombre||''));
       return this.filterTipo ? arr.filter(u => u.tipo === this.filterTipo) : arr;
@@ -135,8 +138,11 @@ export default {
   methods: {
     async loadUsuarios() {
       try {
-        const data = await getUsuarios();
-        this.list = data.map(u => ({ ...u }));
+        const usuarios = await getUsuarios();
+        const safeUsuarios = Array.isArray(usuarios)
+          ? usuarios
+          : (Array.isArray(usuarios?.data) ? usuarios.data : []);
+        this.list = safeUsuarios.map(u => ({ ...u }));
       } catch (e) {
         console.error(e);
         alert(e.message || 'Error al cargar usuarios');

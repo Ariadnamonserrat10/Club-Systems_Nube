@@ -68,7 +68,11 @@ export const actualizarAsistencia = (payload) =>
   });
 
 // ================= USUARIOS =================
-export const getUsuarios = () => request(USUARIOS);
+export const getUsuarios = async () => {
+  const data = await request(USUARIOS);
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.data) ? data.data : [];
+};
 
 export const updateUsuario = (id, payload) =>
   request(`${USUARIOS}?id=${id}`, {
@@ -97,7 +101,8 @@ export const getMonitoresPorClub = (clubId) =>
 
 export const getAllMonitoresWithClubs = async () => {
   const data = await request(USUARIOS);
-  return (data.data || []).filter(u => u.tipo === 'MONITOR' && u.club_asignado);
+  const usuarios = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+  return usuarios.filter(u => u.tipo === 'MONITOR' && u.club_asignado);
 };
 
 export const asignarMonitorAClub = (monitorId, clubId) =>
