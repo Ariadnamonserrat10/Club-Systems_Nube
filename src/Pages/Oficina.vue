@@ -251,17 +251,33 @@ export default {
          return;
        }
 
-       const response = await axios.get(
-         `${BACKEND}/obtenerUsuario.php?id=${usuarioId}`
-       );
+       let response;
+       try {
+         response = await axios.get(`${BACKEND}/obtenerUsuario.php?id=${usuarioId}`);
+       } catch (err) {
+         if (err?.response?.status === 404) {
+           response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
+         } else {
+           throw err;
+         }
+       }
 
-       if (response.data.status === "success") {
+       if (response.data.status === "success" && response.data.data) {
          this.usuarioActual = {
            ...response.data.data,
            foto: this.resolveFotoUrl(response.data.data?.foto)
          };
+       } else {
+         console.warn("Usuario no encontrado o respuesta inválida, cerrando sesión.");
+         this.cerrarSesion();
+         return;
        }
      } catch (error) {
+       if (error?.response?.status === 404) {
+         console.warn("usuarioId no existe en backend. Se limpia sesión.");
+         this.cerrarSesion();
+         return;
+       }
        console.error("Error cargando usuario:", error);
      }
    },
@@ -272,12 +288,14 @@ export default {
     cerrarSesion() {
      sessionStorage.removeItem("usuarioId");
      sessionStorage.removeItem("usuarioNombre");
+     sessionStorage.removeItem("usuarioTipo");
       this.$router.push("/");
     },
 
     async loadClubs() {
       try {
         const rows = await getClubs();
+        console.log("GET CLUBS RESPONSE:", rows);
         // Obtener todos los monitores
         const todosLosMonitores = await getAllMonitoresWithClubs();
         
@@ -385,8 +403,9 @@ export default {
       }
     },
 
-    async handleEditClub({ index, club }, actor = "Usuario Oficina") {
+    async handleEditClub({ id, club }, actor = "Usuario Oficina") {
       try {
+        const index = this.clubs.findIndex((c) => Number(c.id) === Number(id));
         const current = this.clubs[index];
         if (!current || !current.id) throw new Error("Club sin id");
         const payload = {
@@ -418,8 +437,9 @@ export default {
       }
     },
 
-    async handleDeleteClub(index, actor = "Usuario Oficina") {
+    async handleDeleteClub(id, actor = "Usuario Oficina") {
       try {
+        const index = this.clubs.findIndex((c) => Number(c.id) === Number(id));
         const current = this.clubs[index];
         if (!current || !current.id) throw new Error("Club sin id");
         await deleteClub(current.id);

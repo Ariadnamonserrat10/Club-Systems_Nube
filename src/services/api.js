@@ -27,7 +27,10 @@ const MONITORES = `${BACKEND}/getMonitores.php`;
 const ASIGNAR = `${BACKEND}/asignarMonitor.php`;
 
 // ================= CLUBS =================
-export const getClubs = () => request(CLUBS);
+export const getClubs = async () => {
+  const data = await request(CLUBS);
+  return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+};
 
 export const createClub = (payload) =>
   request(CLUBS, {
@@ -113,7 +116,10 @@ export const asignarMonitorAClub = (monitorId, clubId) =>
   });
 
 // ================= ALUMNOS =================
-export const getAlumnos = () => request(ALUMNOS);
+export const getAlumnos = async () => {
+  const data = await request(ALUMNOS);
+  return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+};
 
 export const createAlumno = (payload) =>
   request(ALUMNOS, {

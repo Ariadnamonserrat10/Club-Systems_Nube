@@ -24,8 +24,8 @@
             <td>{{ club.cupo }}</td>
             <td>{{ club.ocupados }}</td>
             <td>
-              <button class="btn btn-warning btn-sm me-2" @click="startEdit(index)">Editar</button>
-              <button class="btn btn-danger btn-sm" @click="confirmDelete(index)">Eliminar</button>
+              <button class="btn btn-warning btn-sm me-2" @click="startEdit(club)">Editar</button>
+              <button class="btn btn-danger btn-sm" @click="confirmDelete(club)">Eliminar</button>
             </td>
           </tr>
         </tbody>
@@ -155,9 +155,9 @@ export default {
       this.localClub = { nombre: '', descripcion: '', cupo: 0 };
       new bootstrap.Modal(document.getElementById('modalClubsR')).show();
     },
-    startEdit(index) {
-      this.editingIndex = index;
-      const c = this.clubs[index];
+    startEdit(club) {
+      this.editingIndex = club?.id ?? null;
+      const c = club || {};
       this.localClub = { nombre: c.nombre, descripcion: c.descripcion, cupo: c.cupo };
       new bootstrap.Modal(document.getElementById('modalClubsR')).show();
     },
@@ -169,12 +169,12 @@ export default {
       if (this.editingIndex === null) {
         this.$emit('add-club', { ...this.localClub }, 'Usuario Oficina');
       } else {
-        this.$emit('edit-club', { index: this.editingIndex, club: { ...this.localClub } }, 'Usuario Oficina');
+        this.$emit('edit-club', { id: this.editingIndex, club: { ...this.localClub } }, 'Usuario Oficina');
       }
       bootstrap.Modal.getInstance(document.getElementById('modalClubsR')).hide();
     },
-    confirmDelete(index) {
-      this.pendingDeleteIndex = index;
+    confirmDelete(club) {
+      this.pendingDeleteIndex = club?.id ?? null;
       new bootstrap.Modal(document.getElementById('confirmDeleteClub')).show();
     },
     deleteConfirmed() {

@@ -143,16 +143,20 @@ const onPasswordInput = () => {
 };
 
 // cargar lista de clubs (si existe endpoint)
-onMounted(async () => {
+const obtenerClubs = async () => {
   try {
     const res = await axios.get(`${BACKEND}/Clubs.php`);
-    console.log("CLUBS:", res.data);
-    console.log("ARRAY:", res.data.data);
+    console.log("RESPUESTA:", res.data);
+    console.log("CLUBS ARRAY:", res.data.data);
 
     clubs.value = res.data.data;
   } catch (err) {
     console.warn("No se pudieron cargar clubs (Clubs.php):", err.message);
   }
+};
+
+onMounted(async () => {
+  obtenerClubs();
 
   // cargar carreras desde backend
   try {
@@ -323,14 +327,6 @@ const goToLogin = () => {
       </div>
 
       <form @submit.prevent="handleRegister" class="small">
-        <pre>{{ clubs }}</pre>
-
-        <div v-for="club in clubs" :key="club.id">
-          <pre>{{ club }}</pre>
-          <h3>{{ club.nombre }}</h3>
-          <p>{{ club.descripcion }}</p>
-        </div>
-
         <!-- Tipo de Usuario -->
         <div class="mb-3 text-center">
           <label class="form-label fw-semibold">Tipo de Usuario</label>

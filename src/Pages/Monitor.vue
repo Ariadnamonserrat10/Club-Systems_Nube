@@ -4,11 +4,6 @@
   </div>
 </template>
 
-<script>
-import MonitorComponent from '../components/Monitor.vue';
-
-export default {
-  name: 'MonitorPage',
-  components: { MonitorComponent },
-};
+<script setup>
+import MonitorComponent from "../components/MonitorComponent.vue"
 </script>

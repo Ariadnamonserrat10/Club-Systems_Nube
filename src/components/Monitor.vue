@@ -165,13 +165,24 @@ export default {
     async cargarUsuarioActual() {
       try {
         const usuarioId = sessionStorage.getItem("usuarioId");
-        if (!usuarioId) return;
+        if (!usuarioId) {
+          sessionStorage.clear();
+          this.$router.push("/");
+          return;
+        }
 
-        const response = await axios.get(
-          `${BACKEND}/obtenerUsuario.php?id=${usuarioId}`
-        );
+        let response;
+        try {
+          response = await axios.get(`${BACKEND}/obtenerUsuario.php?id=${usuarioId}`);
+        } catch (err) {
+          if (err?.response?.status === 404) {
+            response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
+          } else {
+            throw err;
+          }
+        }
 
-        if (response.data?.status === "success") {
+        if (response.data?.status === "success" && response.data.data) {
           const datos = response.data.data;
           this.usuarioActual.nombre = datos.nombre || "";
           this.usuarioActual.apellidoP = datos.apellidoP || "";
@@ -183,8 +194,19 @@ export default {
 
           // Si la BD devuelve el club asignado al monitor, opcionalmente actualizarlo
           if (datos.club_nombre) this.monitor.club = datos.club_nombre;
+        } else {
+          console.warn("Usuario no encontrado o respuesta inválida, cerrando sesión.");
+          sessionStorage.clear();
+          this.$router.push("/");
+          return;
         }
       } catch (error) {
+        if (error?.response?.status === 404) {
+          console.warn("usuarioId no existe en backend. Se limpia sesión.");
+          sessionStorage.clear();
+          this.$router.push("/");
+          return;
+        }
         console.error("Error cargando usuario Monitor:", error);
       }
     },
@@ -260,7 +282,8 @@ export default {
       try {
         const res = await axios.get(`${BACKEND}/getClubs.php`);
         if (res.data?.status === "success" && Array.isArray(res.data.data)) {
-          console.log("CLUBS:", res.data.data);
+          console.log("RESPUESTA:", res.data);
+          console.log("CLUBS ARRAY:", res.data.data);
           this.clubsList = res.data.data;
         } else {
           console.warn("No se obtuvieron clubs:", res.data);
