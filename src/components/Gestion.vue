@@ -29,7 +29,7 @@
       <tbody>
         <tr v-for="u in filteredUsers" :key="u.id">
           <td>
-            <img :src="u.foto || placeholder" alt="foto" width="36" height="36" class="rounded-circle"/>
+            <img :src="resolveFotoUrl(u.foto) || placeholder" alt="foto" width="36" height="36" class="rounded-circle"/>
           </td>
           <td>{{ u.nombre }} {{ u.apellidoP }} {{ u.apellidoM }}</td>
           <td>{{ u.usuario }}</td>
@@ -108,6 +108,7 @@
 
 <script>
 import { getUsuarios, updateUsuario, deleteUsuario, uploadFoto } from '../services/api';
+import { BACKEND } from '../services/backend';
 
 export default {
   name: 'Gestion',
@@ -136,13 +137,23 @@ export default {
     }
   },
   methods: {
+    resolveFotoUrl(foto) {
+      if (!foto || typeof foto !== 'string') return '';
+      if (foto.startsWith('blob:')) return '';
+      if (/^https?:\/\//i.test(foto)) return foto;
+      const path = foto.startsWith('/') ? foto.slice(1) : foto;
+      return `${BACKEND}/${path}`;
+    },
     async loadUsuarios() {
       try {
         const usuarios = await getUsuarios();
         const safeUsuarios = Array.isArray(usuarios)
           ? usuarios
           : (Array.isArray(usuarios?.data) ? usuarios.data : []);
-        this.list = safeUsuarios.map(u => ({ ...u }));
+        this.list = safeUsuarios.map(u => ({
+          ...u,
+          foto: (typeof u?.foto === 'string' && u.foto.startsWith('blob:')) ? '' : u?.foto
+        }));
       } catch (e) {
         console.error(e);
         alert(e.message || 'Error al cargar usuarios');
@@ -151,7 +162,7 @@ export default {
     openEdit(u) {
       this.selectedId = u.id;
       this.form = { ...u, password: '' };
-      this.previewFoto = u.foto || '';
+      this.previewFoto = this.resolveFotoUrl(u.foto) || '';
       this.fotoFile = null;
       this.showModal = true;
     },

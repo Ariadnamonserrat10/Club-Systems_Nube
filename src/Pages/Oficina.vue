@@ -7,7 +7,7 @@
       <div>
         <div class="text-center mb-4">
           <img
-            :src="usuarioActual.foto"
+            :src="resolveFotoUrl(usuarioActual.foto)"
             alt="Usuario"
             class="rounded-circle mb-2"
             width="80"
@@ -233,6 +233,13 @@ export default {
     };
   },
   methods: {
+   resolveFotoUrl(foto) {
+     if (!foto || typeof foto !== "string") return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+     if (foto.startsWith("blob:")) return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+     if (/^https?:\/\//i.test(foto)) return foto;
+     const path = foto.startsWith("/") ? foto.slice(1) : foto;
+     return `${BACKEND}/${path}`;
+   },
    async cargarUsuarioActual() {
      try {
        const usuarioId = sessionStorage.getItem("usuarioId");
@@ -249,7 +256,10 @@ export default {
        );
 
        if (response.data.status === "success") {
-         this.usuarioActual = response.data.data;
+         this.usuarioActual = {
+           ...response.data.data,
+           foto: this.resolveFotoUrl(response.data.data?.foto)
+         };
        }
      } catch (error) {
        console.error("Error cargando usuario:", error);

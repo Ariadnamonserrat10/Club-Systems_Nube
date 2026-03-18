@@ -3,7 +3,7 @@
     <!-- PERFIL DEL MONITOR -->
     <div class="card shadow-sm p-3 mb-3 bg-white d-flex flex-row align-items-center">
       <img
-        :src="usuarioActual.foto || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
+        :src="resolveFotoUrl(usuarioActual.foto) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
         alt="Foto del monitor"
         class="rounded-circle me-3"
         width="80"
@@ -151,6 +151,13 @@ export default {
     },
   },
   methods: {
+    resolveFotoUrl(foto) {
+      if (!foto || typeof foto !== "string") return "";
+      if (foto.startsWith("blob:")) return "";
+      if (/^https?:\/\//i.test(foto)) return foto;
+      const path = foto.startsWith("/") ? foto.slice(1) : foto;
+      return `${BACKEND}/${path}`;
+    },
     async cargarUsuarioActual() {
       try {
         const usuarioId = sessionStorage.getItem("usuarioId");
@@ -165,7 +172,7 @@ export default {
           this.usuarioActual.nombre = datos.nombre || "";
           this.usuarioActual.apellidoP = datos.apellidoP || "";
           this.usuarioActual.tipo = datos.tipo || sessionStorage.getItem("usuarioTipo") || "";
-          this.usuarioActual.foto = datos.foto || this.usuarioActual.foto;
+          this.usuarioActual.foto = this.resolveFotoUrl(datos.foto) || this.usuarioActual.foto;
           this.usuarioActual.club_asignado = datos.club_asignado ?? null;
           this.usuarioActual.club_nombre = datos.club_nombre ?? null;
           this.selectedClubId = this.usuarioActual.club_asignado;

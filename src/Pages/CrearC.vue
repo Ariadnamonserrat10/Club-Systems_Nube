@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
-import { getCarreras } from "../services/api";
+import { getCarreras, uploadFoto } from "../services/api";
 import { BACKEND } from "../services/backend";
 
 const router = useRouter();
@@ -30,6 +30,9 @@ const form = ref({
   confirmPassword: "",
   foto: null,
 });
+
+const fotoPreview = ref(null);
+const fotoFile = ref(null);
 
 // catálogo de carreras desde backend
 const carreras = ref([]);
@@ -85,8 +88,20 @@ const selectUserType = (type) => {
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (file) {
-    form.value.foto = URL.createObjectURL(file);
+    fotoFile.value = file;
+    if (fotoPreview.value && fotoPreview.value.startsWith("blob:")) {
+      URL.revokeObjectURL(fotoPreview.value);
+    }
+    fotoPreview.value = URL.createObjectURL(file);
   }
+};
+
+const resolveFotoUrl = (foto) => {
+  if (!foto || typeof foto !== "string") return "";
+  if (foto.startsWith("blob:")) return "";
+  if (/^https?:\/\//i.test(foto)) return foto;
+  const path = foto.startsWith("/") ? foto.slice(1) : foto;
+  return `${BACKEND}/${path}`;
 };
 
 // validación de complejidad de contraseña ingresada por usuario
@@ -176,9 +191,16 @@ const handleRegister = async () => {
   }
 
   try {
+    let fotoPath = null;
+    if (fotoFile.value) {
+      const up = await uploadFoto(fotoFile.value);
+      fotoPath = up?.file || null;
+    }
+
     // enviar club_asignado si se seleccionó (mantener compatibilidad con backend)
     const payload = {
       ...form.value,
+      foto: fotoPath,
       tipo: userType.value === "oficina" ? "OFICINA" : "MONITOR",
       // el backend espera 'tipo' (OFICINA | MONITOR)
       club_asignado: selectedClubId.value ? Number(selectedClubId.value) : null,
@@ -196,7 +218,7 @@ const handleRegister = async () => {
         numeroControl: form.value.numeroControl || "N/A",
         carrera: form.value.carrera || "N/A",
         telefono: form.value.telefono || "N/A",
-        foto: form.value.foto || null,
+        foto: fotoPath,
       };
       showSuccessModal.value = true;
     } else {
@@ -238,6 +260,11 @@ const resetForm = () => {
     confirmPassword: "",
     foto: null,
   };
+  fotoFile.value = null;
+  if (fotoPreview.value && fotoPreview.value.startsWith("blob:")) {
+    URL.revokeObjectURL(fotoPreview.value);
+  }
+  fotoPreview.value = null;
   userType.value = "oficina";
   alertError.value = "";
   alertInfo.value = true;
@@ -325,8 +352,8 @@ const goToLogin = () => {
         <!-- Imagen -->
         <div class="text-center mb-3">
           <img
-            v-if="form.foto"
-            :src="form.foto"
+            v-if="fotoPreview"
+            :src="fotoPreview"
             alt="Foto de perfil"
             class="rounded-circle shadow-sm mb-2 border"
             width="100"
@@ -533,7 +560,7 @@ const goToLogin = () => {
           <div class="modal-body text-center">
             <div v-if="registeredUser.foto" class="mb-3">
               <img
-                :src="registeredUser.foto"
+                :src="resolveFotoUrl(registeredUser.foto)"
                 alt="Foto de usuario"
                 class="rounded-circle border"
                 width="100"
