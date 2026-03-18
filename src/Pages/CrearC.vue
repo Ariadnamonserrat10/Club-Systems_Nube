@@ -8,7 +8,7 @@ import { BACKEND } from "../services/backend";
 const router = useRouter();
 
 // lista de clubs y selección
-const clubsList = ref([]);
+const clubs = ref([]);
 const selectedClubId = ref(null);
 
 const userType = ref("oficina");
@@ -145,13 +145,13 @@ const onPasswordInput = () => {
 // cargar lista de clubs (si existe endpoint)
 onMounted(async () => {
   try {
-    const res = await axios.get(`${BACKEND}/getClubs.php`);
-    if (res.data?.status === "success" && Array.isArray(res.data.data)) {
-      console.log("CLUBS:", res.data.data);
-      clubsList.value = res.data.data;
-    }
+    const res = await axios.get(`${BACKEND}/Clubs.php`);
+    console.log("CLUBS:", res.data);
+    console.log("ARRAY:", res.data.data);
+
+    clubs.value = res.data.data;
   } catch (err) {
-    console.warn("No se pudieron cargar clubs (getClubs.php):", err.message);
+    console.warn("No se pudieron cargar clubs (Clubs.php):", err.message);
   }
 
   // cargar carreras desde backend
@@ -323,6 +323,8 @@ const goToLogin = () => {
       </div>
 
       <form @submit.prevent="handleRegister" class="small">
+        <pre>{{ clubs }}</pre>
+
         <!-- Tipo de Usuario -->
         <div class="mb-3 text-center">
           <label class="form-label fw-semibold">Tipo de Usuario</label>
@@ -436,7 +438,7 @@ const goToLogin = () => {
           <label for="clubSelect" class="form-label">Club asignado (opcional)</label>
           <select id="clubSelect" v-model="selectedClubId" class="form-select">
             <option :value="null">-- Ninguno --</option>
-            <option v-for="c in clubsList" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+            <option v-for="c in clubs" :key="c.id" :value="c.id">{{ c.nombre }}</option>
           </select>
         </div>
 
