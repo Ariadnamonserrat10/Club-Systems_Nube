@@ -171,16 +171,7 @@ export default {
           return;
         }
 
-        let response;
-        try {
-          response = await axios.get(`${BACKEND}/obtenerUsuario.php?id=${usuarioId}`);
-        } catch (err) {
-          if (err?.response?.status === 404) {
-            response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
-          } else {
-            throw err;
-          }
-        }
+        const response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
 
         if (response.data?.status === "success" && response.data.data) {
           const datos = response.data.data;

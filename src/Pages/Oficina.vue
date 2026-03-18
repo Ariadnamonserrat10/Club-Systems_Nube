@@ -251,16 +251,7 @@ export default {
          return;
        }
 
-       let response;
-       try {
-         response = await axios.get(`${BACKEND}/obtenerUsuario.php?id=${usuarioId}`);
-       } catch (err) {
-         if (err?.response?.status === 404) {
-           response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
-         } else {
-           throw err;
-         }
-       }
+       const response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
 
        if (response.data.status === "success" && response.data.data) {
          this.usuarioActual = {
@@ -391,6 +382,11 @@ export default {
           id_responsable: savedRow.id_responsable,
           creado_en: savedRow.creado_en,
         };
+        if (!mapped.nombre) {
+          await this.loadClubs();
+          this.showToast("Club agregado correctamente");
+          return;
+        }
         this.clubs.unshift(mapped);
         this.logAction(
           actor,
