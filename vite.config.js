@@ -8,7 +8,7 @@ export default defineConfig({
       '/api': {
         target: 'https://club-backend-XXXXXX.BACKEND', // Reemplaza con la URL real de Cloud Run
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/BACKEND, ''),
+        rewrite: (path) => path.replace(/^\/BACKEND/, ''),
       },
     },
   },
