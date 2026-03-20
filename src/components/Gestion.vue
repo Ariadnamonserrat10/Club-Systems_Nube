@@ -47,11 +47,29 @@
           <td>{{ u.club_asignado || '-' }}</td>
           <td>
             <button class="btn btn-warning btn-sm me-2" @click="openEdit(u)">Editar</button>
-            <button class="btn btn-danger btn-sm" @click="onDelete(u)">Eliminar</button>
+            <button class="btn btn-danger btn-sm" @click="requestDelete(u)">Eliminar</button>
           </td>
         </tr>
       </tbody>
     </table>
+
+    <div class="modal fade" id="confirmDeleteUser" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">Confirmar eliminación</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">¿Eliminar usuario {{ pendingDeleteUser?.nombre || '' }}?</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-danger" @click="confirmDelete">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal Editar -->
     <div v-if="showModal" class="modal-backdrop fade show"></div>
@@ -138,7 +156,8 @@ export default {
       previewFoto: '',
       placeholder: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
       localMsg: '',
-      localMsgType: 'error'
+      localMsgType: 'error',
+      pendingDeleteUser: null
     };
   },
   computed: {
@@ -262,12 +281,22 @@ export default {
         this.notifyError(e.message || 'Error al guardar');
       }
     },
-    async onDelete(u) {
-      if (!confirm(`¿Eliminar usuario ${u.nombre}?`)) return;
+    requestDelete(u) {
+      this.pendingDeleteUser = u || null;
+      if (!this.pendingDeleteUser) return;
+      new bootstrap.Modal(document.getElementById('confirmDeleteUser')).show();
+    },
+    async confirmDelete() {
+      const u = this.pendingDeleteUser;
+      if (!u || !u.id) return;
       try {
         await deleteUsuario(u.id);
         await this.loadUsuarios();
         this.notifySuccess('Usuario eliminado correctamente');
+        const modalEl = document.getElementById('confirmDeleteUser');
+        const instance = bootstrap.Modal.getInstance(modalEl);
+        if (instance) instance.hide();
+        this.pendingDeleteUser = null;
       } catch (e) {
         console.error(e);
         this.notifyError(e.message || 'Error al eliminar');

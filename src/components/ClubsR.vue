@@ -150,6 +150,9 @@ export default {
     }
   },
   methods: {
+    emitError(msg) {
+      this.$emit('show-error', msg);
+    },
     normalizarTexto(valor) {
       const limpio = (valor || '')
         .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
@@ -178,13 +181,34 @@ export default {
       this.localClub = { nombre: c.nombre, descripcion: c.descripcion, cupo: c.cupo };
       new bootstrap.Modal(document.getElementById('modalClubsR')).show();
     },
-    saveClub() {
-      if (!this.localClub.nombre || !this.localClub.descripcion || this.localClub.cupo <= 0) {
-        this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Error', tipo: 'club', descripcion: 'Campos obligatorios' });
-        return this.$root.showError ? this.$root.showError('Todos los campos son obligatorios') : null;
+    validarClub() {
+      const nombre = (this.localClub.nombre || '').trim();
+      const descripcion = (this.localClub.descripcion || '').trim();
+      const cupo = Number(this.localClub.cupo);
+
+      if (!nombre) return 'El nombre del club es obligatorio.';
+      if (nombre.length > 100) return 'El nombre debe tener máximo 100 caracteres.';
+      if (!/^[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/.test(nombre)) {
+        return 'El nombre solo permite letras y espacios, y debe iniciar con mayúscula.';
       }
-      if (this.localClub.cupo > 50) {
-        return this.$root.showError ? this.$root.showError('El cupo máximo permitido es 50') : null;
+
+      if (!descripcion) return 'La descripción del club es obligatoria.';
+      if (!/^[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/.test(descripcion)) {
+        return 'La descripción solo permite texto y debe iniciar con mayúscula.';
+      }
+
+      if (!Number.isInteger(cupo) || cupo < 1 || cupo > 50) {
+        return 'El cupo debe ser un número entero entre 1 y 50.';
+      }
+
+      return '';
+    },
+    saveClub() {
+      const error = this.validarClub();
+      if (error) {
+        this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Error', tipo: 'club', descripcion: 'Campos obligatorios' });
+        this.emitError(error);
+        return;
       }
       if (this.editingIndex === null) {
         this.$emit('add-club', { ...this.localClub }, 'Usuario Oficina');

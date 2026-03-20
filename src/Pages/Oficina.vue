@@ -113,6 +113,7 @@
         @set-alumnos="handleSetAlumnos"
         @update-alumno="handleUpdateAlumno"
         @request-reload-alumnos="loadAlumnos"
+        @show-error="showError"
       />
     </div>
 

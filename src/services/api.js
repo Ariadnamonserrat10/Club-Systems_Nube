@@ -1,6 +1,22 @@
 // src/services/api.js
 import { BACKEND } from './backend';
 
+function normalizeApiErrorMessage(data) {
+  const detailsArray = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
+  const detailsString = typeof data?.details === 'string' ? data.details.trim() : '';
+  const baseMsg = (data?.message || data?.error || '').toString().trim();
+
+  if (detailsArray.length) return detailsArray.join('. ');
+  if (detailsString) return detailsString;
+
+  // Evita mostrar el texto genérico "Validación" cuando el backend no envía detalle.
+  if (/^validaci[oó]n$/i.test(baseMsg)) {
+    return 'Los datos enviados no son válidos. Verifica texto, números y caracteres permitidos.';
+  }
+
+  return baseMsg || 'Error en la petición';
+}
+
 async function request(url, options = {}) {
   const res = await fetch(url, options);
   const text = await res.text();
@@ -9,10 +25,7 @@ async function request(url, options = {}) {
   try { data = JSON.parse(text); } 
   catch { data = { raw: text }; }
 
-  const details = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
-  const detailMsg = details.length ? details.join('. ') : '';
-  const baseMsg = data?.message || data?.error || 'Error en la petición';
-  const finalMsg = detailMsg || baseMsg;
+  const finalMsg = normalizeApiErrorMessage(data);
 
   // Algunos endpoints devuelven status=error con HTTP 200.
   if (!res.ok || data?.status === 'error') {
