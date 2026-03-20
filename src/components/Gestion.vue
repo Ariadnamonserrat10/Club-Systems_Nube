@@ -96,11 +96,14 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label">Usuario</label>
-                <input v-model="form.usuario" class="form-control" @input="soloUsuario('usuario')"/>
+                <input v-model="form.usuario" class="form-control" maxlength="8" @input="soloUsuario('usuario')"/>
+                <small class="d-block" :class="usuarioPolicy.onlyAlnum ? 'text-success' : 'text-danger'">Solo letras y números.</small>
+                <small class="d-block" :class="usuarioPolicy.maxLen8 ? 'text-success' : 'text-danger'">Máximo 8 caracteres.</small>
+                <small class="d-block" :class="usuarioPolicy.hasLetterAndDigit ? 'text-success' : 'text-danger'">Debe combinar letras y números.</small>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Tipo</label>
-                <select v-model="form.tipo" class="form-select">
+                <select v-model="form.tipo" class="form-select" @change="onTipoChange">
                   <option value="OFICINA">OFICINA</option>
                   <option value="MONITOR">MONITOR</option>
                 </select>
@@ -109,7 +112,7 @@
                 <label class="form-label">Club asignado (id)</label>
                 <input v-model.number="form.club_asignado" type="number" class="form-control"/>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-4" v-if="form.tipo === 'MONITOR'">
                 <label class="form-label">Número de control</label>
                 <input
                   v-model="form.numeroControl"
@@ -119,18 +122,23 @@
                   placeholder="8 dígitos"
                   @input="soloNumeros('numeroControl')"
                 />
-                <small class="text-muted">Debe tener exactamente 8 dígitos numéricos.</small>
+                <small class="text-muted">Obligatorio para MONITOR: exactamente 8 dígitos numéricos.</small>
               </div>
             </div>
             <div class="row g-2 mt-2">
               <div class="col-md-6">
                 <label class="form-label">Nueva contraseña (opcional)</label>
                 <input v-model="form.password" type="password" class="form-control"/>
-                <small class="text-muted">Requisitos: exactamente 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.</small>
+                <small class="d-block" :class="passwordPolicy.hasLen8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
+                <small class="d-block" :class="passwordPolicy.hasUpper ? 'text-success' : 'text-danger'">Al menos 1 mayúscula.</small>
+                <small class="d-block" :class="passwordPolicy.hasLower ? 'text-success' : 'text-danger'">Al menos 1 minúscula.</small>
+                <small class="d-block" :class="passwordPolicy.hasDigit ? 'text-success' : 'text-danger'">Al menos 1 número.</small>
+                <small class="d-block" :class="passwordPolicy.hasSpecial ? 'text-success' : 'text-danger'">Al menos 1 carácter especial.</small>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-6" v-if="form.tipo === 'MONITOR'">
                 <label class="form-label">Teléfono</label>
                 <input v-model="form.telefono" class="form-control" @input="soloNumeros('telefono')"/>
+                <small class="text-muted">Obligatorio para MONITOR: solo números (7 a 15 dígitos).</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Foto (desde dispositivo)</label>
@@ -174,6 +182,12 @@ export default {
     };
   },
   computed: {
+    usuarioPolicy() {
+      return this.getUsuarioPolicyResult(this.form?.usuario || '');
+    },
+    passwordPolicy() {
+      return this.getPasswordPolicyResult(this.form?.password || '');
+    },
     filteredUsers() {
       const propUsuarios = Array.isArray(this.usuarios)
         ? this.usuarios
@@ -224,7 +238,20 @@ export default {
       this.form[campo] = (this.form[campo] || '').replace(/\D/g, '');
     },
     soloUsuario(campo) {
-      this.form[campo] = (this.form[campo] || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
+      this.form[campo] = (this.form[campo] || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
+    },
+    onTipoChange() {
+      if (this.form.tipo === 'OFICINA') {
+        this.form.numeroControl = '';
+        this.form.telefono = '';
+      }
+    },
+    getUsuarioPolicyResult(usuario) {
+      const val = String(usuario || '');
+      const onlyAlnum = /^[A-Za-z0-9]*$/.test(val);
+      const maxLen8 = val.length <= 8;
+      const hasLetterAndDigit = /[A-Za-z]/.test(val) && /\d/.test(val);
+      return { ok: onlyAlnum && maxLen8 && hasLetterAndDigit, onlyAlnum, maxLen8, hasLetterAndDigit };
     },
     getPasswordPolicyResult(password) {
       const pwd = String(password || '');
@@ -232,25 +259,32 @@ export default {
       const hasUpper = /[A-Z]/.test(pwd);
       const hasLower = /[a-z]/.test(pwd);
       const hasDigit = /\d/.test(pwd);
-      return { ok: hasLen8 && hasUpper && hasLower && hasDigit, hasLen8, hasUpper, hasLower, hasDigit };
+      const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+      return { ok: hasLen8 && hasUpper && hasLower && hasDigit && hasSpecial, hasLen8, hasUpper, hasLower, hasDigit, hasSpecial };
     },
     validateEditPayload(payload) {
+      const userPolicy = this.getUsuarioPolicyResult(payload.usuario);
+      if (!userPolicy.ok) {
+        return 'Usuario inválido. Debe ser alfanumérico, combinar letras y números, y tener máximo 8 caracteres.';
+      }
+
       if ((payload.numeroControl || '').trim() !== '' && !/^\d{8}$/.test(payload.numeroControl)) {
         return 'El número de control debe tener exactamente 8 dígitos numéricos.';
       }
 
-      if (payload.tipo === 'MONITOR' && !/^\d{8}$/.test((payload.numeroControl || '').trim())) {
-        return 'Para tipo MONITOR, el número de control es obligatorio y debe tener 8 dígitos.';
-      }
-
-      if ((payload.telefono || '').trim() !== '' && !/^\d{7,15}$/.test(payload.telefono)) {
-        return 'El teléfono debe contener solo números (7 a 15 dígitos).';
+      if (payload.tipo === 'MONITOR') {
+        if (!/^\d{8}$/.test((payload.numeroControl || '').trim())) {
+          return 'Para tipo MONITOR, el número de control es obligatorio y debe tener 8 dígitos.';
+        }
+        if (!/^\d{7,15}$/.test((payload.telefono || '').trim())) {
+          return 'Para tipo MONITOR, el teléfono es obligatorio y debe contener solo números (7 a 15 dígitos).';
+        }
       }
 
       if (payload.password) {
         const p = this.getPasswordPolicyResult(payload.password);
         if (!p.ok) {
-          return 'Contraseña inválida. Debe tener exactamente 8 caracteres, al menos 1 mayúscula, 1 minúscula y 1 número.';
+          return 'Contraseña inválida. Debe tener exactamente 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.';
         }
       }
 
@@ -305,11 +339,16 @@ export default {
           nombre: this.normalizarTexto(this.form.nombre),
           apellidoP: this.normalizarTexto(this.form.apellidoP),
           apellidoM: this.normalizarTexto(this.form.apellidoM),
-          usuario: (this.form.usuario || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, ''),
+          usuario: (this.form.usuario || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8),
           numeroControl: (this.form.numeroControl || '').replace(/\D/g, ''),
           telefono: (this.form.telefono || '').replace(/\D/g, ''),
           foto: this.form.foto || ''
         };
+
+        if (payload.tipo === 'OFICINA') {
+          payload.numeroControl = '';
+          payload.telefono = '';
+        }
 
         const validationError = this.validateEditPayload(payload);
         if (validationError) {
