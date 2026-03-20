@@ -52,7 +52,8 @@ if (!function_exists('is_title_case_text')) {
     function is_title_case_text($value, $allowEmpty = false) {
         $value = normalize_spaces($value);
         if ($value === '') return $allowEmpty;
-        return preg_match('/^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)( [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)*$/u', $value) === 1;
+        // Acepta también palabras de una letra (ej. "Y").
+        return preg_match('/^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]*)( [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]*)*$/u', $value) === 1;
     }
 }
 

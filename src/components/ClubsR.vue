@@ -154,15 +154,19 @@ export default {
       this.$emit('show-error', msg);
     },
     normalizarTexto(valor) {
+      // No forzar trim/capitalización mientras el usuario escribe para no romper espacios.
+      return (valor || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '');
+    },
+    formatearTitulo(valor) {
       const limpio = (valor || '')
         .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
         .replace(/\s+/g, ' ')
-        .trimStart();
+        .trim();
+      if (!limpio) return '';
       return limpio
         .split(' ')
-        .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
-        .join(' ')
-        .trimEnd();
+        .map((p) => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+        .join(' ');
     },
     soloTextoClub() {
       this.localClub.nombre = this.normalizarTexto(this.localClub.nombre);
@@ -204,6 +208,9 @@ export default {
       return '';
     },
     saveClub() {
+      // Formatear al guardar, sin interferir con la escritura del usuario.
+      this.localClub.nombre = this.formatearTitulo(this.localClub.nombre);
+      this.localClub.descripcion = this.formatearTitulo(this.localClub.descripcion);
       const error = this.validarClub();
       if (error) {
         this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Error', tipo: 'club', descripcion: 'Campos obligatorios' });
