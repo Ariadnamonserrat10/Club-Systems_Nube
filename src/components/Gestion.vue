@@ -109,11 +109,24 @@
                 <label class="form-label">Club asignado (id)</label>
                 <input v-model.number="form.club_asignado" type="number" class="form-control"/>
               </div>
+              <div class="col-md-4">
+                <label class="form-label">Número de control</label>
+                <input
+                  v-model="form.numeroControl"
+                  class="form-control"
+                  maxlength="8"
+                  inputmode="numeric"
+                  placeholder="8 dígitos"
+                  @input="soloNumeros('numeroControl')"
+                />
+                <small class="text-muted">Debe tener exactamente 8 dígitos numéricos.</small>
+              </div>
             </div>
             <div class="row g-2 mt-2">
               <div class="col-md-6">
                 <label class="form-label">Nueva contraseña (opcional)</label>
                 <input v-model="form.password" type="password" class="form-control"/>
+                <small class="text-muted">Requisitos: exactamente 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Teléfono</label>
@@ -213,6 +226,36 @@ export default {
     soloUsuario(campo) {
       this.form[campo] = (this.form[campo] || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
     },
+    getPasswordPolicyResult(password) {
+      const pwd = String(password || '');
+      const hasLen8 = pwd.length === 8;
+      const hasUpper = /[A-Z]/.test(pwd);
+      const hasLower = /[a-z]/.test(pwd);
+      const hasDigit = /\d/.test(pwd);
+      return { ok: hasLen8 && hasUpper && hasLower && hasDigit, hasLen8, hasUpper, hasLower, hasDigit };
+    },
+    validateEditPayload(payload) {
+      if ((payload.numeroControl || '').trim() !== '' && !/^\d{8}$/.test(payload.numeroControl)) {
+        return 'El número de control debe tener exactamente 8 dígitos numéricos.';
+      }
+
+      if (payload.tipo === 'MONITOR' && !/^\d{8}$/.test((payload.numeroControl || '').trim())) {
+        return 'Para tipo MONITOR, el número de control es obligatorio y debe tener 8 dígitos.';
+      }
+
+      if ((payload.telefono || '').trim() !== '' && !/^\d{7,15}$/.test(payload.telefono)) {
+        return 'El teléfono debe contener solo números (7 a 15 dígitos).';
+      }
+
+      if (payload.password) {
+        const p = this.getPasswordPolicyResult(payload.password);
+        if (!p.ok) {
+          return 'Contraseña inválida. Debe tener exactamente 8 caracteres, al menos 1 mayúscula, 1 minúscula y 1 número.';
+        }
+      }
+
+      return '';
+    },
     resolveFotoUrl(foto) {
       if (!foto || typeof foto !== 'string') return '';
       if (foto.startsWith('blob:')) return '';
@@ -257,20 +300,29 @@ export default {
     },
     async save() {
       try {
-        let fotoPath = this.form.foto || '';
-        if (this.fotoFile) {
-          const up = await uploadFoto(this.fotoFile);
-          fotoPath = up.file; // ruta relativa devuelta por el backend
-        }
         const payload = {
           ...this.form,
           nombre: this.normalizarTexto(this.form.nombre),
           apellidoP: this.normalizarTexto(this.form.apellidoP),
           apellidoM: this.normalizarTexto(this.form.apellidoM),
           usuario: (this.form.usuario || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, ''),
+          numeroControl: (this.form.numeroControl || '').replace(/\D/g, ''),
           telefono: (this.form.telefono || '').replace(/\D/g, ''),
-          foto: fotoPath
+          foto: this.form.foto || ''
         };
+
+        const validationError = this.validateEditPayload(payload);
+        if (validationError) {
+          this.notifyError(validationError);
+          return;
+        }
+
+        let fotoPath = this.form.foto || '';
+        if (this.fotoFile) {
+          const up = await uploadFoto(this.fotoFile);
+          fotoPath = up.file; // ruta relativa devuelta por el backend
+        }
+        payload.foto = fotoPath;
         if (!payload.password) delete payload.password; // no enviar si está vacío
         await updateUsuario(this.selectedId, payload);
         await this.loadUsuarios();
