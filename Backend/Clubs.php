@@ -18,28 +18,40 @@ $pdo = null;
 if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
   $pdo = $GLOBALS['pdo'];
 } elseif (function_exists('getConnection')) {
-  $pdo = getConnection();
+  // Algunas implementaciones de getConnection no existen o no devuelven PDO.
+  try {
+    $connectionFactory = 'getConnection';
+    $maybePdo = $connectionFactory();
+    if ($maybePdo instanceof PDO) {
+      $pdo = $maybePdo;
+    }
+  } catch (Throwable $e) {
+    error_log('Clubs.php: getConnection() falló, se usa mysqli: ' . $e->getMessage());
+    $pdo = null;
+  }
 }
 
 if (!$pdo) {
-// Intentar mysqli si db.php la expone (no recomendado, pero soportado)
-if (isset($GLOBALS['mysqli']) && $GLOBALS['mysqli'] instanceof mysqli) {
-$mysqli = $GLOBALS['mysqli'];
-} elseif (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
-$mysqli = getMysqli();
-} elseif (isset($GLOBALS['conexion']) && $GLOBALS['conexion'] instanceof mysqli) {
-$mysqli = $GLOBALS['conexion'];
-} elseif (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
-$mysqli = $GLOBALS['conn'];
-}
-if (!isset($mysqli)) {
-http_response_code(500);
-echo json_encode(['error' => 'No se pudo obtener una conexión a la base de datos']);
-exit;
-}
-// Envoltorio mínimo para operaciones con mysqli
-handleWithMysqli($mysqli);
-exit;
+  // Fallback principal: db.php expone mysqli vía getMysqli()/$conexion.
+  if (isset($GLOBALS['mysqli']) && $GLOBALS['mysqli'] instanceof mysqli) {
+    $mysqli = $GLOBALS['mysqli'];
+  } elseif (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
+    $mysqli = getMysqli();
+  } elseif (isset($GLOBALS['conexion']) && $GLOBALS['conexion'] instanceof mysqli) {
+    $mysqli = $GLOBALS['conexion'];
+  } elseif (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
+    $mysqli = $GLOBALS['conn'];
+  }
+
+  if (!isset($mysqli)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'No se pudo obtener una conexión a la base de datos']);
+    exit;
+  }
+
+  // Envoltorio mínimo para operaciones con mysqli
+  handleWithMysqli($mysqli);
+  exit;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
