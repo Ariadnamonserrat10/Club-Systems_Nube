@@ -126,8 +126,8 @@ try {
 
     if (array_key_exists('usuario', $payload)) {
       $payload['usuario'] = trim((string)$payload['usuario']);
-      if (!is_username_alnum_combo_max8($payload['usuario'], false)) {
-        $errors[] = 'usuario debe ser alfanumérico, combinar letras y números, y tener máximo 8 caracteres';
+      if (!is_username_alnum_combo_exact8($payload['usuario'], false)) {
+        $errors[] = 'usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres';
       }
     }
 

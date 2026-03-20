@@ -65,11 +65,11 @@ if (!function_exists('is_username_letters_only')) {
     }
 }
 
-if (!function_exists('is_username_alnum_combo_max8')) {
-    function is_username_alnum_combo_max8($value, $allowEmpty = false) {
+if (!function_exists('is_username_alnum_combo_exact8')) {
+    function is_username_alnum_combo_exact8($value, $allowEmpty = false) {
         $value = trim((string)$value);
         if ($value === '') return $allowEmpty;
-        if (strlen($value) > 8) return false;
+        if (strlen($value) !== 8) return false;
         if (preg_match('/^[A-Za-z0-9]+$/', $value) !== 1) return false;
         return preg_match('/[A-Za-z]/', $value) === 1 && preg_match('/\d/', $value) === 1;
     }

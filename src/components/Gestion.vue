@@ -98,7 +98,7 @@
                 <label class="form-label">Usuario</label>
                 <input v-model="form.usuario" class="form-control" maxlength="8" @input="soloUsuario('usuario')"/>
                 <small class="d-block" :class="usuarioPolicy.onlyAlnum ? 'text-success' : 'text-danger'">Solo letras y números.</small>
-                <small class="d-block" :class="usuarioPolicy.maxLen8 ? 'text-success' : 'text-danger'">Máximo 8 caracteres.</small>
+                <small class="d-block" :class="usuarioPolicy.len8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
                 <small class="d-block" :class="usuarioPolicy.hasLetterAndDigit ? 'text-success' : 'text-danger'">Debe combinar letras y números.</small>
               </div>
               <div class="col-md-4">
@@ -249,9 +249,9 @@ export default {
     getUsuarioPolicyResult(usuario) {
       const val = String(usuario || '');
       const onlyAlnum = /^[A-Za-z0-9]*$/.test(val);
-      const maxLen8 = val.length <= 8;
+      const len8 = val.length === 8;
       const hasLetterAndDigit = /[A-Za-z]/.test(val) && /\d/.test(val);
-      return { ok: onlyAlnum && maxLen8 && hasLetterAndDigit, onlyAlnum, maxLen8, hasLetterAndDigit };
+      return { ok: onlyAlnum && len8 && hasLetterAndDigit, onlyAlnum, len8, hasLetterAndDigit };
     },
     getPasswordPolicyResult(password) {
       const pwd = String(password || '');
@@ -265,7 +265,7 @@ export default {
     validateEditPayload(payload) {
       const userPolicy = this.getUsuarioPolicyResult(payload.usuario);
       if (!userPolicy.ok) {
-        return 'Usuario inválido. Debe ser alfanumérico, combinar letras y números, y tener máximo 8 caracteres.';
+        return 'Usuario inválido. Debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres.';
       }
 
       if ((payload.numeroControl || '').trim() !== '' && !/^\d{8}$/.test(payload.numeroControl)) {
