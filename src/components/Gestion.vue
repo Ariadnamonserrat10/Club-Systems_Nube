@@ -311,5 +311,5 @@ export default {
 
 <style scoped>
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1040; }
-.modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index: 1050; }
+.modal.d-block { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index: 1050; }
 </style>
