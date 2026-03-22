@@ -106,7 +106,7 @@
 
           <h2
             class="titulo-constancia"
-            style="font-size: 11pt; margin: 60px 0 15px 0"
+            style="font-size: 11pt; margin: 90px 0 15px 0"
           >
             CONSTANCIA DE CUMPLIMIENTO DE ACTIVIDAD CULTURAL Y/O DEPORTIVA
           </h2>
@@ -126,7 +126,7 @@
             <div class="espacios"></div>
 
             <p class="texto justificado">
-              La que suscribe {{ getNombreJefe('jefe_actividades') || '__________________________' }}, Jefa del Departamento de
+              La que suscribe {{ getNombreJefe('jefe_actividades') || '__________________________' }}, Jefe del Departamento de
               Actividades Extraescolares, por este medio se permite hacer de su
               conocimiento que la estudiante
               <strong>{{ toUpper(previewData.estudianteNombre) }}</strong> con
@@ -197,7 +197,7 @@
                   <div class="linea-firma"></div>
                   <div class="nombre-firma">{{ getNombreJefe('jefe_promocion') || '__________________________' }}</div>
                   <div class="cargo-firma">
-                    JEFE DE LA OFICINA DE PROMOCIÓN DEPORTIVA
+                    JEFE DE LA OFICINA DE PROMOCIÓN {{ toUpper(previewData.tipoActividad || 'CULTURAL') }}
                   </div>
                 </td>
                 <td
@@ -212,7 +212,7 @@
                   <div class="linea-firma"></div>
                   <div class="nombre-firma">{{ getNombreJefe('jefe_actividades') || '__________________________' }}</div>
                   <div class="cargo-firma">
-                    JEFA DEL DEPTO. DE ACTIVIDADES EXTRAESCOLARES
+                    JEFE DEL DEPARTAMENTO DE ACTIVIDADES EXTRAESCOLARES
                   </div>
                 </td>
               </tr>
