@@ -91,17 +91,31 @@ try {
             'jefa_servicios' => null,
         ];
 
-        if ($firmaJefeActividades !== null && ctype_digit((string)$firmaJefeActividades)) {
-            $u = getUsuarioById($conexion, (int)$firmaJefeActividades);
-            if ($u) {
-                $result['jefe_actividades'] = $u;
+        if ($firmaJefeActividades !== null) {
+            if (ctype_digit((string)$firmaJefeActividades)) {
+                $u = getUsuarioById($conexion, (int)$firmaJefeActividades);
+                if ($u) {
+                    $result['jefe_actividades'] = $u;
+                }
+            } elseif (trim((string)$firmaJefeActividades) !== '') {
+                $result['jefe_actividades'] = [
+                    'id' => null,
+                    'nombre' => trim((string)$firmaJefeActividades),
+                ];
             }
         }
 
-        if ($firmaJefePromocion !== null && ctype_digit((string)$firmaJefePromocion)) {
-            $u = getUsuarioById($conexion, (int)$firmaJefePromocion);
-            if ($u) {
-                $result['jefe_promocion'] = $u;
+        if ($firmaJefePromocion !== null) {
+            if (ctype_digit((string)$firmaJefePromocion)) {
+                $u = getUsuarioById($conexion, (int)$firmaJefePromocion);
+                if ($u) {
+                    $result['jefe_promocion'] = $u;
+                }
+            } elseif (trim((string)$firmaJefePromocion) !== '') {
+                $result['jefe_promocion'] = [
+                    'id' => null,
+                    'nombre' => trim((string)$firmaJefePromocion),
+                ];
             }
         }
 

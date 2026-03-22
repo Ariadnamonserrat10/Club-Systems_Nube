@@ -126,7 +126,7 @@
             <div class="espacios"></div>
 
             <p class="texto justificado">
-              La que suscribe {{ getNombreJefe('jefe_actividades') || '__________________________' }}, Jefe del Departamento de
+              La que suscribe {{ getNombreJefe('jefe_actividades') || '__________________________' }}, {{ tituloFirma('jefe_actividades') }} del Departamento de
               Actividades Extraescolares, por este medio se permite hacer de su
               conocimiento que la estudiante
               <strong>{{ toUpper(previewData.estudianteNombre) }}</strong> con
@@ -197,7 +197,7 @@
                   <div class="linea-firma"></div>
                   <div class="nombre-firma">{{ getNombreJefe('jefe_promocion') || '__________________________' }}</div>
                   <div class="cargo-firma">
-                    JEFE DE LA OFICINA DE PROMOCIÓN {{ toUpper(previewData.tipoActividad || 'CULTURAL') }}
+                    {{ tituloFirma('jefe_promocion') }} DE LA OFICINA DE PROMOCIÓN {{ toUpper(previewData.tipoActividad || 'CULTURAL') }}
                   </div>
                 </td>
                 <td
@@ -212,7 +212,7 @@
                   <div class="linea-firma"></div>
                   <div class="nombre-firma">{{ getNombreJefe('jefe_actividades') || '__________________________' }}</div>
                   <div class="cargo-firma">
-                    JEFE DEL DEPARTAMENTO DE ACTIVIDADES EXTRAESCOLARES
+                    {{ tituloFirma('jefe_actividades') }} DEL DEPARTAMENTO DE ACTIVIDADES EXTRAESCOLARES
                   </div>
                 </td>
               </tr>
@@ -241,28 +241,31 @@
             v-model="jefesSeleccionados.jefa_servicios_nombre"
             class="form-control form-control-sm"
             placeholder="Nombre de la jefa"
+            @input="sanitizeNombreInput('jefa_servicios_nombre')"
             @change="guardarPreferenciaManual('jefa_servicios')"
           />
         </div>
 
         <div class="mb-3">
-          <label class="form-label small fw-bold">Jefe de Actividades</label>
-          <select v-model="jefesSeleccionados.jefe_actividades" class="form-select form-select-sm" @change="guardarPreferencia('jefe_actividades')">
-            <option value="">-- Seleccionar --</option>
-            <option v-for="u in usuariosOficina" :key="u.id" :value="u.id">
-              {{ formatNombre(u) }}
-            </option>
-          </select>
+          <label class="form-label small fw-bold">Jefe/Jefa de Actividades</label>
+          <input
+            v-model="jefesSeleccionados.jefe_actividades_nombre"
+            class="form-control form-control-sm"
+            placeholder="Nombre completo"
+            @input="sanitizeNombreInput('jefe_actividades_nombre')"
+            @change="guardarPreferenciaManual('jefe_actividades')"
+          />
         </div>
 
         <div class="mb-3">
-          <label class="form-label small fw-bold">Jefe de Promoción</label>
-          <select v-model="jefesSeleccionados.jefe_promocion" class="form-select form-select-sm" @change="guardarPreferencia('jefe_promocion')">
-            <option value="">-- Seleccionar --</option>
-            <option v-for="u in usuariosOficina" :key="u.id" :value="u.id">
-              {{ formatNombre(u) }}
-            </option>
-          </select>
+          <label class="form-label small fw-bold">Jefe/Jefa de Promoción</label>
+          <input
+            v-model="jefesSeleccionados.jefe_promocion_nombre"
+            class="form-control form-control-sm"
+            placeholder="Nombre completo"
+            @input="sanitizeNombreInput('jefe_promocion_nombre')"
+            @change="guardarPreferenciaManual('jefe_promocion')"
+          />
         </div>
 
         <hr>
@@ -329,7 +332,7 @@
 </template>
 
 <script>
-import { getAsistenciasPorClub, getFirmas, asignarCargo, saveConfig } from "../services/api";
+import { getAsistenciasPorClub, getFirmas, saveConfig } from "../services/api";
 export default {
   name: "Listas",
   props: ["clubs", "alumnos", "fechas", "usuarios"],
@@ -560,16 +563,29 @@ export default {
       if (!u) return "";
       return `${u.nombre || ""} ${u.apellidoP || ""} ${u.apellidoM || ""}`.trim().toUpperCase();
     },
-    async guardarPreferencia(cargo) {
-      const idUsuario = this.jefesSeleccionados[cargo];
-      if (!idUsuario) return;
-      try {
-        await asignarCargo(cargo, idUsuario);
-      } catch (e) {
-        console.error("Error guardando cargo:", e);
+    sanitizeNombreInput(campo) {
+      const raw = (this.jefesSeleccionados[campo] || "").toString();
+      const limpio = raw
+        .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trimStart()
+        .toUpperCase();
+      this.jefesSeleccionados[campo] = limpio;
+    },
+    inferGenero(nombre) {
+      const first = (nombre || "").trim().split(/\s+/)[0] || "";
+      if (!first) return "M";
+      return first.endsWith("A") ? "F" : "M";
+    },
+    tituloFirma(cargo) {
+      const nombre = this.getNombreJefe(cargo).replace(/^C\.\s*/i, "");
+      if (!nombre) {
+        return cargo === "jefa_servicios" ? "JEFA" : "JEFE";
       }
+      return this.inferGenero(nombre) === "F" ? "JEFA" : "JEFE";
     },
     async guardarPreferenciaManual(cargo) {
+      this.sanitizeNombreInput(cargo + "_nombre");
       const valor = this.jefesSeleccionados[cargo + "_nombre"];
       try {
         await saveConfig("firma_" + cargo, valor);
@@ -581,18 +597,23 @@ export default {
       try {
         const firmas = await getFirmas();
         if (firmas.jefe_actividades) {
-          this.jefesSeleccionados.jefe_actividades = firmas.jefe_actividades.id;
+          this.jefesSeleccionados.jefe_actividades = firmas.jefe_actividades.id || "";
           if (firmas.jefe_actividades.nombre) {
             this.jefesSeleccionados.jefe_actividades_nombre = String(firmas.jefe_actividades.nombre).toUpperCase();
+            this.sanitizeNombreInput("jefe_actividades_nombre");
           }
         }
         if (firmas.jefe_promocion) {
-          this.jefesSeleccionados.jefe_promocion = firmas.jefe_promocion.id;
+          this.jefesSeleccionados.jefe_promocion = firmas.jefe_promocion.id || "";
           if (firmas.jefe_promocion.nombre) {
             this.jefesSeleccionados.jefe_promocion_nombre = String(firmas.jefe_promocion.nombre).toUpperCase();
+            this.sanitizeNombreInput("jefe_promocion_nombre");
           }
         }
-        if (firmas.jefa_servicios) this.jefesSeleccionados.jefa_servicios_nombre = firmas.jefa_servicios.nombre;
+        if (firmas.jefa_servicios) {
+          this.jefesSeleccionados.jefa_servicios_nombre = firmas.jefa_servicios.nombre;
+          this.sanitizeNombreInput("jefa_servicios_nombre");
+        }
       } catch (e) {
         console.error("Error cargando firmas:", e);
       }
