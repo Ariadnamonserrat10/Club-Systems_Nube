@@ -206,8 +206,41 @@
     <div v-if="previewData" class="print-preview">
       <div class="preview-documento">
         <div class="constancia A4" id="constancia">
-          <!-- ENCABEZADO CON TABLA Y LOGO -->
-          <img src="../Img/Registro_Club.png" alt="Encabezado Registro Club" style="width: 90%; height: auto; display: block; margin: 0 auto;" />
+          <!-- ENCABEZADO EN TEXTO (evita depender de imagen con celdas vacías) -->
+          <table
+            class="tabla-encabezado"
+            cellpadding="8"
+            cellspacing="0"
+            style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9pt"
+          >
+            <tr>
+              <td rowspan="2" style="border: 1px solid #000; width: 95px; text-align: center; vertical-align: middle;">
+                <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 75px; height: auto" />
+              </td>
+              <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 11pt; line-height: 1.1;">
+                Formato&nbsp;&nbsp;&nbsp; para&nbsp;&nbsp;&nbsp; el&nbsp;&nbsp;&nbsp; Registro&nbsp;&nbsp;&nbsp; de&nbsp;&nbsp;&nbsp; Participantes&nbsp;&nbsp;&nbsp; de<br>
+                Actividades Culturales y/o Deportivas
+              </td>
+              <td rowspan="2" style="border: 1px solid #000; width: 32%; vertical-align: top; padding: 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+                  <tr>
+                    <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Código:TecNM-VI-PO-003-01</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Revisión: 0</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px;"><strong>Página 1 de 1</strong></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 10pt;">
+                Referencia a la Norma ISO 9001:2015: 8.1,&nbsp; 8.2.1,&nbsp; 8.2.2
+              </td>
+            </tr>
+          </table>
 
           <h2
             class="titulo-constancia"

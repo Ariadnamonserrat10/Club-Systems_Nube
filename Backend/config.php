@@ -24,24 +24,26 @@ if (!isset($conexion) || !($conexion instanceof mysqli)) {
     exit;
 }
 
-function ensureConfigTable(mysqli $db)
+function hasAppConfigTable(mysqli $db): bool
 {
-    $sql = "CREATE TABLE IF NOT EXISTS app_config (
-        clave VARCHAR(100) NOT NULL PRIMARY KEY,
-        valor TEXT NULL,
-        actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
-    if (!$db->query($sql)) {
-        throw new RuntimeException('No se pudo asegurar app_config: ' . $db->error);
+    $res = @$db->query('SELECT 1 FROM app_config LIMIT 1');
+    if ($res instanceof mysqli_result) {
+        $res->free();
+        return true;
     }
+    return false;
 }
 
 try {
-    ensureConfigTable($conexion);
+    $appConfigDisponible = hasAppConfigTable($conexion);
     $method = $_SERVER['REQUEST_METHOD'];
 
     if ($method === 'GET') {
+        if (!$appConfigDisponible) {
+            echo json_encode(['status' => 'success', 'data' => []]);
+            exit;
+        }
+
         if (isset($_GET['clave']) && trim((string)$_GET['clave']) !== '') {
             $clave = trim((string)$_GET['clave']);
             $stmt = $conexion->prepare('SELECT clave, valor, actualizado_en FROM app_config WHERE clave = ? LIMIT 1');
@@ -66,6 +68,15 @@ try {
     }
 
     if ($method === 'POST') {
+        if (!$appConfigDisponible) {
+            http_response_code(503);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'No hay persistencia de configuracion: tabla app_config no disponible',
+            ]);
+            exit;
+        }
+
         $payload = json_decode(file_get_contents('php://input'), true);
         if (!is_array($payload)) {
             $payload = [];
