@@ -255,7 +255,7 @@
             >
             <br>
               {{ getNombreJefe('jefa_servicios') || '__________________________' }}<br />
-              JEFA DEL DEPARTAMENTO DE SERVICIOS ESCOLARES<br />
+              {{ tituloServiciosEscolares() }} DEL DEPARTAMENTO DE SERVICIOS ESCOLARES<br />
               PRESENTE
             </p>
             <div class="espacios"></div>
@@ -1037,7 +1037,7 @@ export default {
         }
       }
 
-      this.jefesSeleccionados[campo] = out.trimEnd();
+      this.jefesSeleccionados[campo] = out;
     },
     inferGenero(nombre) {
       const first = (nombre || '').trim().split(/\s+/)[0] || '';
@@ -1051,9 +1051,20 @@ export default {
       }
       return this.inferGenero(nombre) === 'F' ? 'JEFA' : 'JEFE';
     },
+    tituloServiciosEscolares() {
+      const raw = (this.jefesSeleccionados.jefa_servicios_nombre || '').toUpperCase().trim();
+      if (/^ENCARGAD[OA]\b/.test(raw)) return 'ENCARGADO';
+      if (/^JEFA\b/.test(raw)) return 'JEFA';
+      if (/^JEFE\b/.test(raw)) return 'JEFE';
+      const nombre = this.getNombreJefe('jefa_servicios').replace(/^C\.\s*/i, '');
+      return this.inferGenero(nombre) === 'F' ? 'JEFA' : 'JEFE';
+    },
     async guardarPreferenciaManual(cargo) {
       this.sanitizeNombreInput(cargo + '_nombre');
-      const valor = this.jefesSeleccionados[cargo + '_nombre'];
+      const valor = String(this.jefesSeleccionados[cargo + '_nombre'] || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      this.jefesSeleccionados[cargo + '_nombre'] = valor;
       try {
         await saveConfig('firma_' + cargo, valor);
       } catch (e) {
@@ -1087,8 +1098,9 @@ export default {
     },
     getNombreJefe(cargo) {
       if (cargo === 'jefa_servicios') {
-        const nom = this.jefesSeleccionados.jefa_servicios_nombre;
-        return nom ? 'C. ' + nom.toUpperCase() : '';
+        const raw = String(this.jefesSeleccionados.jefa_servicios_nombre || '').toUpperCase();
+        const limpio = raw.replace(/^(JEFA|JEFE|ENCARGAD[OA])\s+/i, '').trim();
+        return limpio ? 'C. ' + limpio : '';
       }
 
       const manualKey = cargo + '_nombre';
