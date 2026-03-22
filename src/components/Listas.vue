@@ -161,7 +161,7 @@
               class="destinatario"
               style="font-size: 10pt; margin: 0 0 20px 0; line-height: 1.6"
             >
-              C. BLANCA ANSELMA CASTRO CASTRO<br />
+              {{ getNombreJefe('jefa_servicios') || 'C. __________________________' }}<br />
               JEFA DEL DEPARTAMENTO DE SERVICIOS ESCOLARES<br />
               PRESENTE
             </p>
@@ -169,7 +169,7 @@
             <div class="espacios"></div>
 
             <p class="texto justificado">
-              La que suscribe Olimpia Cruz Reyes, Jefa del Departamento de
+              La que suscribe {{ getNombreJefe('jefe_actividades') || '__________________________' }}, Jefa del Departamento de
               Actividades Extraescolares, por este medio se permite hacer de su
               conocimiento que la estudiante
               <strong>{{ toUpper(previewData.estudianteNombre) }}</strong> con
@@ -182,7 +182,7 @@
               un valor numérico de
               <strong>{{ desempenoValor(previewData.desempeno) }}</strong>
               durante el periodo escolar
-              <strong>{{ toUpper(previewData.periodo) }}</strong
+              <strong>{{ toUpper(previewData.mesInicio) }}-{{ toUpper(previewData.mesFin) }} {{ previewData.anioPeriodo }}</strong
               >, con un valor curricular de 1 crédito.
             </p>
 
@@ -238,7 +238,7 @@
                   "
                 >
                   <div class="linea-firma"></div>
-                  <div class="nombre-firma">FERNANDO JAIR MENDOZA JIMENEZ</div>
+                  <div class="nombre-firma">{{ getNombreJefe('jefe_promocion') || '__________________________' }}</div>
                   <div class="cargo-firma">
                     JEFE DE LA OFICINA DE PROMOCIÓN DEPORTIVA
                   </div>
@@ -253,7 +253,7 @@
                   "
                 >
                   <div class="linea-firma"></div>
-                  <div class="nombre-firma">OLIMPIA CRUZ REYES</div>
+                  <div class="nombre-firma">{{ getNombreJefe('jefe_actividades') || '__________________________' }}</div>
                   <div class="cargo-firma">
                     JEFA DEL DEPTO. DE ACTIVIDADES EXTRAESCOLARES
                   </div>
@@ -276,37 +276,83 @@
       </div>
 
       <div class="acciones-preview">
+        <h5 class="mb-3">Configuración de Firmas</h5>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Jefa de Servicios Escolares</label>
+          <input
+            v-model="jefesSeleccionados.jefa_servicios_nombre"
+            class="form-control form-control-sm"
+            placeholder="Nombre de la jefa"
+            @change="guardarPreferenciaManual('jefa_servicios')"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Jefe de Actividades</label>
+          <select v-model="jefesSeleccionados.jefe_actividades" class="form-select form-select-sm" @change="guardarPreferencia('jefe_actividades')">
+            <option value="">-- Seleccionar --</option>
+            <option v-for="u in usuariosOficina" :key="u.id" :value="u.id">
+              {{ formatNombre(u) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Jefe de Promoción</label>
+          <select v-model="jefesSeleccionados.jefe_promocion" class="form-select form-select-sm" @change="guardarPreferencia('jefe_promocion')">
+            <option value="">-- Seleccionar --</option>
+            <option v-for="u in usuariosOficina" :key="u.id" :value="u.id">
+              {{ formatNombre(u) }}
+            </option>
+          </select>
+        </div>
+
+        <hr>
+
         <h5 class="mb-3">Editar Constancia</h5>
         <div class="campos-editar">
           <div class="campo">
             <label>Período:</label>
-            <input
-              v-model="previewData.periodo"
-              type="text"
-              class="form-control form-control-sm"
-            />
-          </div>
-          <div class="campo">
-            <label>Desempeño:</label>
-            <select
-              v-model="previewData.desempeno"
-              class="form-select form-select-sm"
-            >
-              <option value="EXCELENTE">EXCELENTE</option>
-              <option value="BUENO">BUENO</option>
-              <option value="REGULAR">REGULAR</option>
-              <option value="INSUFICIENTE">INSUFICIENTE</option>
-            </select>
-          </div>
-          <div class="campo">
-            <label>Tipo de club:</label>
-            <select
-              v-model="previewData.tipoActividad"
-              class="form-select form-select-sm"
-            >
-              <option value="CULTURAL">CULTURAL</option>
-              <option value="DEPORTIVA">DEPORTIVA</option>
-            </select>
+            <div class="d-flex gap-2">
+              <select v-model="previewData.mesInicio" class="form-select form-select-sm">
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril">Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+                <option value="Julio">Julio</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+              </select>
+              <span class="align-self-center">-</span>
+              <select v-model="previewData.mesFin" class="form-select form-select-sm">
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril">Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+                <option value="Julio">Julio</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+              </select>
+              <input
+                v-model="previewData.anioPeriodo"
+                type="number"
+                min="2020"
+                max="2030"
+                class="form-control form-control-sm"
+                style="width: 100px"
+              />
+            </div>
           </div>
         </div>
         <div class="botones-acciones">
@@ -326,10 +372,10 @@
 </template>
 
 <script>
-import { getAsistenciasPorClub } from "../services/api";
+import { getAsistenciasPorClub, getFirmas, asignarCargo, saveConfig } from "../services/api";
 export default {
   name: "Listas",
-  props: ["clubs", "alumnos", "fechas"],
+  props: ["clubs", "alumnos", "fechas", "usuarios"],
   data() {
     return {
       clubSeleccionado: "",
@@ -337,6 +383,11 @@ export default {
       periodoActual: this.getPeriodoActual(),
       alumnosData: [],
       fechasData: [],
+      jefesSeleccionados: {
+        jefe_promocion: "",
+        jefe_actividades: "",
+        jefa_servicios_nombre: "",
+      },
     };
   },
   computed: {
@@ -388,6 +439,10 @@ export default {
         mes: meses[ahora.getMonth()],
         anio: ahora.getFullYear(),
       };
+    },
+    usuariosOficina() {
+      if (!Array.isArray(this.usuarios)) return [];
+      return this.usuarios.filter(u => (u.tipo || "").toString().toUpperCase() === "OFICINA");
     },
   },
   methods: {
@@ -470,8 +525,8 @@ export default {
       const mes = f.getMonth();
       const anio = f.getFullYear();
       return mes >= 0 && mes <= 5
-        ? `Enero-Junio ${anio}`
-        : `Agosto-Diciembre ${anio}`;
+        ? { mesInicio: "Enero", mesFin: "Junio", anioPeriodo: anio }
+        : { mesInicio: "Agosto", mesFin: "Diciembre", anioPeriodo: anio };
     },
     isCulturalName(nombre) {
       const n = (nombre || "").toString().trim().toLowerCase();
@@ -488,6 +543,7 @@ export default {
     },
     imprimirConstancia(alumno) {
       const club = alumno.club || this.clubSeleccionado || "";
+      const periodo = this.getPeriodoActual();
       const data = {
         estudianteNombre:
           `${alumno.nombre || ""} ${alumno.apellidoP || ""} ${alumno.apellidoM || ""}`.trim(),
@@ -502,7 +558,9 @@ export default {
               ? "BUENO"
               : "REGULAR")
         ).toString(),
-        periodo: alumno.periodo || this.periodoActual,
+        mesInicio: periodo.mesInicio,
+        mesFin: periodo.mesFin,
+        anioPeriodo: periodo.anioPeriodo,
         tipoActividad: this.tipoActividad(club),
       };
       this.previewData = { ...data };
@@ -539,6 +597,48 @@ export default {
     descargarTodas() {
       console.warn('Descargar todas (PDF) no implementado');
     },
+    formatNombre(u) {
+      if (!u) return "";
+      return `${u.nombre || ""} ${u.apellidoP || ""} ${u.apellidoM || ""}`.trim().toUpperCase();
+    },
+    async guardarPreferencia(cargo) {
+      const idUsuario = this.jefesSeleccionados[cargo];
+      if (!idUsuario) return;
+      try {
+        await asignarCargo(cargo, idUsuario);
+      } catch (e) {
+        console.error("Error guardando cargo:", e);
+      }
+    },
+    async guardarPreferenciaManual(cargo) {
+      const valor = this.jefesSeleccionados[cargo + "_nombre"];
+      try {
+        await saveConfig("firma_" + cargo, valor);
+      } catch (e) {
+        console.error("Error guardando firma manual:", e);
+      }
+    },
+    async loadCargos() {
+      try {
+        const firmas = await getFirmas();
+        if (firmas.jefe_actividades) this.jefesSeleccionados.jefe_actividades = firmas.jefe_actividades.id;
+        if (firmas.jefe_promocion) this.jefesSeleccionados.jefe_promocion = firmas.jefe_promocion.id;
+        if (firmas.jefa_servicios) this.jefesSeleccionados.jefa_servicios_nombre = firmas.jefa_servicios.nombre;
+      } catch (e) {
+        console.error("Error cargando firmas:", e);
+      }
+    },
+    getNombreJefe(cargo) {
+      if (cargo === "jefa_servicios") {
+        return this.jefesSeleccionados.jefa_servicios_nombre
+          ? "C. " + this.jefesSeleccionados.jefa_servicios_nombre.toUpperCase()
+          : "";
+      }
+      const id = this.jefesSeleccionados[cargo];
+      if (!id) return "";
+      const u = this.usuariosOficina.find(user => user.id == id);
+      return u ? this.formatNombre(u) : "";
+    },
     printStyles() {
       return `
         @page { size: A4; margin: 20mm; }
@@ -568,6 +668,7 @@ export default {
     },
   },
   mounted() {
+    this.loadCargos();
     // si ya hay un club seleccionado inicial, cargar
     if (this.clubSeleccionado) this.loadAsistencias();
   },
