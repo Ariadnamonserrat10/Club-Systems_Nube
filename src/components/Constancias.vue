@@ -1107,6 +1107,18 @@ export default {
   padding: 8px;
 }
 
+/* Evita texto invisible por herencia de estilos globales */
+.tabla-encabezado,
+.tabla-encabezado td,
+.tabla-encabezado strong,
+.tabla-pie,
+.tabla-pie td,
+.cuerpo,
+.cuerpo p,
+.cuerpo strong {
+  color: #000 !important;
+}
+
 .celda-logo {
   width: 80px;
   text-align: center;
