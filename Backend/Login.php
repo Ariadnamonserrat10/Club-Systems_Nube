@@ -3,6 +3,7 @@ require_once __DIR__ . "/cors.php";
 header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
+require_once __DIR__ . "/validation.php";
 $rawBody = file_get_contents("php://input");
 $data = json_decode($rawBody, true);
 
@@ -19,6 +20,12 @@ $userType = trim($data["userType"] ?? "");
 if ($usuario === '' || $password === '') {
   http_response_code(422);
   echo json_encode(["status" => "error", "message" => "Usuario y contraseña requeridos"]);
+  exit;
+}
+
+if (!is_username_alnum_combo_exact8($usuario, false)) {
+  http_response_code(422);
+  echo json_encode(["status" => "error", "message" => "El usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres"]);
   exit;
 }
 

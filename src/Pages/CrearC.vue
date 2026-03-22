@@ -155,7 +155,15 @@ const normalizarTexto = (valor) => {
 };
 
 const soloNumeros = (valor) => String(valor || '').replace(/\D/g, '');
-const soloUsuarioLetras = (valor) => String(valor || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
+const soloUsuarioAlnum8 = (valor) => String(valor || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
+const usuarioPolicy = (valor) => {
+  const v = String(valor || '');
+  return {
+    onlyAlnum: /^[A-Za-z0-9]*$/.test(v),
+    len8: v.length === 8,
+    hasLetterAndDigit: /[A-Za-z]/.test(v) && /\d/.test(v)
+  };
+};
 
 // cargar lista de clubs (si existe endpoint)
 const obtenerClubs = async () => {
@@ -193,10 +201,11 @@ const handleRegister = async () => {
   form.value.apellidoM = normalizarTexto(form.value.apellidoM);
   form.value.numeroControl = soloNumeros(form.value.numeroControl);
   form.value.telefono = soloNumeros(form.value.telefono);
-  form.value.usuario = soloUsuarioLetras(form.value.usuario);
+  form.value.usuario = soloUsuarioAlnum8(form.value.usuario);
 
-  if (!form.value.usuario) {
-    alertError.value = "El usuario solo puede contener letras";
+  const up = usuarioPolicy(form.value.usuario);
+  if (!(up.onlyAlnum && up.len8 && up.hasLetterAndDigit)) {
+    alertError.value = "El usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres";
     return;
   }
 
@@ -483,8 +492,10 @@ const goToLogin = () => {
           <div class="col-md-4">
             <input
               v-model="form.usuario"
+              @input="form.usuario = soloUsuarioAlnum8(form.usuario)"
               class="form-control"
               placeholder="Usuario"
+              maxlength="8"
               required
             />
           </div>

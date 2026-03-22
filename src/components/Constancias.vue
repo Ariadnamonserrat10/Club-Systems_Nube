@@ -363,6 +363,7 @@
             v-model="jefesSeleccionados.jefa_servicios_nombre" 
             class="form-control form-control-sm" 
             placeholder="Nombre de la jefa"
+            maxlength="60"
             @input="sanitizeNombreInput('jefa_servicios_nombre')"
             @change="guardarPreferenciaManual('jefa_servicios')"
           />
@@ -374,6 +375,7 @@
             v-model="jefesSeleccionados.jefe_actividades_nombre"
             class="form-control form-control-sm"
             placeholder="Nombre completo"
+            maxlength="60"
             @input="sanitizeNombreInput('jefe_actividades_nombre')"
             @change="guardarPreferenciaManual('jefe_actividades')"
           />
@@ -385,6 +387,7 @@
             v-model="jefesSeleccionados.jefe_promocion_nombre"
             class="form-control form-control-sm"
             placeholder="Nombre completo"
+            maxlength="60"
             @input="sanitizeNombreInput('jefe_promocion_nombre')"
             @change="guardarPreferenciaManual('jefe_promocion')"
           />
@@ -1016,12 +1019,25 @@ export default {
     },
     sanitizeNombreInput(campo) {
       const raw = (this.jefesSeleccionados[campo] || '').toString();
-      const limpio = raw
+      const base = raw
         .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, '')
         .replace(/\s+/g, ' ')
         .trimStart()
         .toUpperCase();
-      this.jefesSeleccionados[campo] = limpio;
+
+      let letras = 0;
+      let out = '';
+      for (const ch of base) {
+        if (/[A-ZÁÉÍÓÚÜÑ]/u.test(ch)) {
+          if (letras >= 50) continue;
+          letras += 1;
+          out += ch;
+        } else if (ch === ' ') {
+          if (out && out[out.length - 1] !== ' ') out += ch;
+        }
+      }
+
+      this.jefesSeleccionados[campo] = out.trimEnd();
     },
     inferGenero(nombre) {
       const first = (nombre || '').trim().split(/\s+/)[0] || '';
