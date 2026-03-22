@@ -342,7 +342,9 @@ export default {
       fechasData: [],
       jefesSeleccionados: {
         jefe_promocion: "",
+        jefe_promocion_nombre: "ARIADNA MONSERRAT LOPEZ",
         jefe_actividades: "",
+        jefe_actividades_nombre: "URIEL ARCADIO AVILA",
         jefa_servicios_nombre: "",
       },
     };
@@ -578,8 +580,18 @@ export default {
     async loadCargos() {
       try {
         const firmas = await getFirmas();
-        if (firmas.jefe_actividades) this.jefesSeleccionados.jefe_actividades = firmas.jefe_actividades.id;
-        if (firmas.jefe_promocion) this.jefesSeleccionados.jefe_promocion = firmas.jefe_promocion.id;
+        if (firmas.jefe_actividades) {
+          this.jefesSeleccionados.jefe_actividades = firmas.jefe_actividades.id;
+          if (firmas.jefe_actividades.nombre) {
+            this.jefesSeleccionados.jefe_actividades_nombre = String(firmas.jefe_actividades.nombre).toUpperCase();
+          }
+        }
+        if (firmas.jefe_promocion) {
+          this.jefesSeleccionados.jefe_promocion = firmas.jefe_promocion.id;
+          if (firmas.jefe_promocion.nombre) {
+            this.jefesSeleccionados.jefe_promocion_nombre = String(firmas.jefe_promocion.nombre).toUpperCase();
+          }
+        }
         if (firmas.jefa_servicios) this.jefesSeleccionados.jefa_servicios_nombre = firmas.jefa_servicios.nombre;
       } catch (e) {
         console.error("Error cargando firmas:", e);
@@ -591,10 +603,23 @@ export default {
           ? "C. " + this.jefesSeleccionados.jefa_servicios_nombre.toUpperCase()
           : "";
       }
+
+      const manualKey = cargo + "_nombre";
+      const manual = (this.jefesSeleccionados[manualKey] || "").toString().trim();
+      if (manual) return manual.toUpperCase();
+
       const id = this.jefesSeleccionados[cargo];
-      if (!id) return "";
+      if (!id) {
+        if (cargo === "jefe_promocion") return "ARIADNA MONSERRAT LOPEZ";
+        if (cargo === "jefe_actividades") return "URIEL ARCADIO AVILA";
+        return "";
+      }
       const u = this.usuariosOficina.find(user => user.id == id);
-      return u ? this.formatNombre(u) : "";
+      const fromUser = u ? this.formatNombre(u) : "";
+      if (fromUser && fromUser !== "ADMIN") return fromUser;
+      if (cargo === "jefe_promocion") return "ARIADNA MONSERRAT LOPEZ";
+      if (cargo === "jefe_actividades") return "URIEL ARCADIO AVILA";
+      return fromUser;
     },
     printStyles() {
       return `
