@@ -68,84 +68,12 @@
     <div v-if="previewData" class="print-preview">
       <div class="preview-documento">
         <div class="constancia A4" id="constancia">
-          <!-- ENCABEZADO CON TABLA Y LOGO -->
-          <table
-            class="tabla-encabezado"
-            cellpadding="8"
-            cellspacing="0"
-            style="
-              width: 100%;
-              border-collapse: collapse;
-              font-family: Arial, sans-serif;
-              font-size: 9pt;
-            "
-          >
-            <tr>
-              <!-- Logo -->
-              <td
-                rowspan="2"
-                style="
-                  border: 1px solid;
-                  width: 90px;
-                  text-align: center;
-                  vertical-align: middle;
-                "
-              >
-                <img
-                  src="../Img/Logo.jpg"
-                  alt="Logo"
-                  style="max-width: 70px; height: auto"
-                />
-              </td>
-
-              <!-- Título -->
-              <td style="border: 1px solid #000; vertical-align: middle">
-                Constancia de cumplimiento de actividad Cultural y/o Deportiva
-              </td>
-
-              <!-- Codigo / Revision / Pagina -->
-              <td
-                rowspan="2"
-                style="
-                  border: 1px solid #000;
-                  width: 32%;
-                  vertical-align: top;
-                  padding: 0;
-                "
-              >
-                <table
-                  style="width: 100%; border-collapse: collapse; font-size: 8pt"
-                >
-                  <tr>
-                    <td
-                      style="
-                        border-bottom: 1px solid black;
-                        padding: 6px;
-                        white-space: nowrap;
-                      "
-                    >
-                      <strong>Codigo:TecNM-VI-PO-003-05</strong>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="border-bottom: 1px solid black; padding: 6px">
-                      Revision: 0
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px">Pagina 1 de 1</td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-
-            <tr>
-              <!-- Norma -->
-              <td style="border: 1px solid; vertical-align: middle">
-                Referencia a la Norma ISO 9001:2015&nbsp;&nbsp;&nbsp;8.1
-              </td>
-            </tr>
-          </table>
+          <!-- ENCABEZADO ORIGINAL DEL FORMATO -->
+          <img
+            src="../Img/Registro_Club.png"
+            alt="Encabezado Registro Club"
+            style="width: 90%; height: auto; display: block; margin: 0 auto"
+          />
 
           <h2
             class="titulo-constancia"
