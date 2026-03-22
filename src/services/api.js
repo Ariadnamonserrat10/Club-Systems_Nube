@@ -44,6 +44,9 @@ const USUARIOS = `${BACKEND}/Usuarios.php`;
 const UPLOAD = `${BACKEND}/upload.php`;
 const MONITORES = `${BACKEND}/getMonitores.php`;
 const ASIGNAR = `${BACKEND}/asignarMonitor.php`;
+const EVALUACION = `${BACKEND}/evaluacion.php`;
+const FIRMAS = `${BACKEND}/firmas.php`;
+const CONFIG = `${BACKEND}/config.php`;
 
 // ================= CLUBS =================
 export const getClubs = async () => {
@@ -132,6 +135,31 @@ export const asignarMonitorAClub = (monitorId, clubId) =>
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ monitor_id: monitorId, club_id: clubId })
+  });
+
+// ================= CONSTANCIAS =================
+export const getEvaluacion = async (params = {}) => {
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  ).toString();
+
+  return request(query ? `${EVALUACION}?${query}` : EVALUACION);
+};
+
+export const getFirmas = () => request(FIRMAS);
+
+export const asignarCargo = (cargo, idUsuario) =>
+  request(FIRMAS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cargo, id_usuario: idUsuario })
+  });
+
+export const saveConfig = (clave, valor) =>
+  request(CONFIG, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clave, valor })
   });
 
 // ================= ALUMNOS =================
