@@ -132,13 +132,16 @@
                 <!-- Vista bloqueada: indica que hay contraseña establecida -->
                 <div v-if="!cambiarPassword" class="d-flex gap-2 align-items-center">
                   <input
-                    type="password"
+                    :type="showCurrentPassword ? 'text' : 'password'"
                     class="form-control"
-                    :value="'placeholder'"
+                    :value="'\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF'"
                     disabled
                     autocomplete="off"
-                    style="max-width:200px"
+                    style="max-width:160px"
                   />
+                  <button class="btn btn-outline-secondary" type="button" @click="showCurrentPassword = !showCurrentPassword">
+                    {{ showCurrentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña' }}
+                  </button>
                   <button class="btn btn-outline-warning" type="button" @click="iniciarCambioPassword">
                     Cambiar contraseña
                   </button>
@@ -245,6 +248,7 @@ export default {
       fotoFile: null,
       previewFoto: '',
       showPassword: false,
+      showCurrentPassword: false,
       cambiarPassword: false,
       passwordCheckOk: false,
       passwordCheckMsg: '',
@@ -535,6 +539,7 @@ export default {
       this.previewFoto = this.resolveFotoUrl(u.foto) || '';
       this.fotoFile = null;
       this.showPassword = false;
+      this.showCurrentPassword = false;
       this.cambiarPassword = false;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
@@ -549,6 +554,7 @@ export default {
       this.fotoFile = null;
       this.previewFoto = '';
       this.showPassword = false;
+      this.showCurrentPassword = false;
       this.cambiarPassword = false;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
