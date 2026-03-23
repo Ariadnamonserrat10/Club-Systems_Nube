@@ -162,7 +162,7 @@
                       />
                       <div class="d-flex gap-2">
                         <button class="btn btn-outline-secondary flex-fill" type="button" @click="showPassword = !showPassword">
-                          {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+                          {{ showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña' }}
                         </button>
                         <button class="btn btn-outline-success flex-fill" type="button" @click="fillWithGeneratedPassword">
                           Generar
