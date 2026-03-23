@@ -29,6 +29,12 @@ if (!is_username_alnum_combo_exact8($usuario, false)) {
   exit;
 }
 
+if (!is_password_strong_exact8($password, false)) {
+  http_response_code(422);
+  echo json_encode(["status" => "error", "message" => "La contraseña debe tener exactamente 8 caracteres e incluir mayúscula, minúscula, número y carácter especial"]);
+  exit;
+}
+
 if ($userType === '') {
   http_response_code(422);
   echo json_encode(["status" => "error", "message" => "Debes seleccionar un área (Oficina o Monitor)"]);

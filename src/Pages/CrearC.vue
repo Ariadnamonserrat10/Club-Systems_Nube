@@ -45,13 +45,15 @@ const generatePassword = (length = 8) => {
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const lower = 'abcdefghijklmnopqrstuvwxyz';
   const digits = '0123456789';
-  const all = upper + lower + digits;
+  const special = '!@#$%^&*';
+  const all = upper + lower + digits + special;
 
   let pwd = '';
   const pick = (set) => set[Math.floor(Math.random() * set.length)];
   pwd += pick(upper);
   pwd += pick(lower);
   pwd += pick(digits);
+  pwd += pick(special);
 
   const remaining = Math.max(0, length - pwd.length);
   if (window.crypto && window.crypto.getRandomValues) {
@@ -114,7 +116,8 @@ const meetsPolicy = (pwd) => {
   const hasUpper = /[A-Z]/.test(pwd);
   const hasLower = /[a-z]/.test(pwd);
   const hasDigit = /\d/.test(pwd);
-  return { ok: hasLen8 && hasUpper && hasLower && hasDigit, hasLen8, hasUpper, hasLower, hasDigit };
+  const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+  return { ok: hasLen8 && hasUpper && hasLower && hasDigit && hasSpecial, hasLen8, hasUpper, hasLower, hasDigit, hasSpecial };
 };
 
 const checkPassword = () => {
@@ -123,14 +126,13 @@ const checkPassword = () => {
   passwordCheckOk.value = res.ok;
   if (res.ok) {
     passwordCheckMsg.value = 'La contraseña cumple con los requisitos.';
-    // Autocompletar Confirmar contraseña solo si aprueba
-    form.value.confirmPassword = form.value.password;
   } else {
     const parts = [];
     if (!res.hasLen8) parts.push('exactamente 8 caracteres');
     if (!res.hasUpper) parts.push('al menos 1 mayúscula');
     if (!res.hasLower) parts.push('al menos 1 minúscula');
     if (!res.hasDigit) parts.push('al menos 1 número');
+    if (!res.hasSpecial) parts.push('al menos 1 carácter especial');
     passwordCheckMsg.value = 'Falta: ' + parts.join(', ');
   }
 };
@@ -214,8 +216,9 @@ const handleRegister = async () => {
     return;
   }
 
-  if (form.value.password.length !== 8) {
-    alertError.value = "La contraseña debe tener exactamente 8 caracteres";
+  const passwordPolicy = meetsPolicy(form.value.password || '');
+  if (!passwordPolicy.ok) {
+    alertError.value = "La contraseña debe tener exactamente 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial";
     return;
   }
 
@@ -506,7 +509,7 @@ const goToLogin = () => {
                 @input="onPasswordInput"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-control"
-                placeholder="Contraseña (8 caracteres)"
+                placeholder="Contraseña (8, con especial)"
                 minlength="8"
                 maxlength="8"
                 required
@@ -520,7 +523,7 @@ const goToLogin = () => {
                 <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
               </button>
             </div>
-            <small class="text-muted">Sugerida: alfanumérica de 8 caracteres</small>
+            <small class="text-muted">Debe incluir mayúscula, minúscula, número y carácter especial.</small>
           </div>
           <div class="col-md-4">
             <div class="input-group">
@@ -534,7 +537,6 @@ const goToLogin = () => {
                 required
               />
               <button
-                v-if="!form.password"
                 class="btn btn-outline-success"
                 type="button"
                 @click="fillWithGenerated"
@@ -543,7 +545,6 @@ const goToLogin = () => {
                 Generar
               </button>
               <button
-                v-else
                 class="btn btn-outline-primary"
                 type="button"
                 @click="checkPassword"

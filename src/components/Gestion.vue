@@ -128,12 +128,55 @@
             <div class="row g-2 mt-2">
               <div class="col-md-6">
                 <label class="form-label">Nueva contraseña (opcional)</label>
-                <input v-model="form.password" type="password" class="form-control"/>
+                <div class="input-group">
+                  <input
+                    v-model="form.password"
+                    :type="showPassword ? 'text' : 'password'"
+                    class="form-control"
+                    minlength="8"
+                    maxlength="8"
+                    autocomplete="new-password"
+                    @beforeinput="onPasswordBeforeInput('password', $event)"
+                    @keydown="onPasswordKeydown('password', $event)"
+                    @paste.prevent="onPasswordPaste('password', $event)"
+                    @input="onPasswordInput($event)"
+                  />
+                  <button class="btn btn-outline-secondary" type="button" @click="showPassword = !showPassword">
+                    {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+                  </button>
+                  <button class="btn btn-outline-success" type="button" @click="fillWithGeneratedPassword">
+                    Generar
+                  </button>
+                </div>
                 <small class="d-block" :class="passwordPolicy.hasLen8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
                 <small class="d-block" :class="passwordPolicy.hasUpper ? 'text-success' : 'text-danger'">Al menos 1 mayúscula.</small>
                 <small class="d-block" :class="passwordPolicy.hasLower ? 'text-success' : 'text-danger'">Al menos 1 minúscula.</small>
                 <small class="d-block" :class="passwordPolicy.hasDigit ? 'text-success' : 'text-danger'">Al menos 1 número.</small>
                 <small class="d-block" :class="passwordPolicy.hasSpecial ? 'text-success' : 'text-danger'">Al menos 1 carácter especial.</small>
+                <small v-if="passwordCheckMsg" class="d-block mt-1" :class="passwordCheckOk ? 'text-success' : 'text-danger'">{{ passwordCheckMsg }}</small>
+              </div>
+              <div class="col-md-6" v-if="form.password">
+                <label class="form-label">Confirmar nueva contraseña</label>
+                <div class="input-group">
+                  <input
+                    v-model="form.confirmPassword"
+                    :type="showPassword ? 'text' : 'password'"
+                    class="form-control"
+                    minlength="8"
+                    maxlength="8"
+                    autocomplete="new-password"
+                    @beforeinput="onPasswordBeforeInput('confirmPassword', $event)"
+                    @keydown="onPasswordKeydown('confirmPassword', $event)"
+                    @paste.prevent="onPasswordPaste('confirmPassword', $event)"
+                    @input="onConfirmPasswordInput($event)"
+                  />
+                  <button class="btn btn-outline-primary" type="button" @click="checkPasswordMatch">
+                    Comprobar
+                  </button>
+                </div>
+                <small class="d-block mt-1" :class="passwordsMatch ? 'text-success' : 'text-danger'">
+                  {{ passwordsMatch ? 'Las contraseñas coinciden.' : 'Escribe y comprueba que coincidan.' }}
+                </small>
               </div>
               <div class="col-md-6" v-if="form.tipo === 'MONITOR'">
                 <label class="form-label">Teléfono</label>
@@ -175,6 +218,10 @@ export default {
       selectedId: null,
       fotoFile: null,
       previewFoto: '',
+      showPassword: false,
+      passwordCheckOk: false,
+      passwordCheckMsg: '',
+      passwordsMatch: false,
       placeholder: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
       localMsg: '',
       localMsgType: 'error',
@@ -262,6 +309,119 @@ export default {
       const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
       return { ok: hasLen8 && hasUpper && hasLower && hasDigit && hasSpecial, hasLen8, hasUpper, hasLower, hasDigit, hasSpecial };
     },
+    generatePassword(length = 8) {
+      const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lower = 'abcdefghijklmnopqrstuvwxyz';
+      const digits = '0123456789';
+      const special = '!@#$%^&*';
+      const all = upper + lower + digits + special;
+
+      const pick = (set) => set[Math.floor(Math.random() * set.length)];
+      let pwd = pick(upper) + pick(lower) + pick(digits) + pick(special);
+      const remaining = Math.max(0, length - pwd.length);
+
+      if (window.crypto && window.crypto.getRandomValues) {
+        const arr = new Uint32Array(remaining);
+        window.crypto.getRandomValues(arr);
+        for (let i = 0; i < remaining; i++) {
+          pwd += all[arr[i] % all.length];
+        }
+      } else {
+        for (let i = 0; i < remaining; i++) {
+          pwd += pick(all);
+        }
+      }
+
+      return pwd.split('').sort(() => Math.random() - 0.5).join('');
+    },
+    fillWithGeneratedPassword() {
+      const generated = this.generatePassword(8);
+      this.form.password = generated;
+      this.form.confirmPassword = generated;
+      this.showPassword = true;
+      this.passwordCheckOk = true;
+      this.passwordCheckMsg = 'Contraseña generada y válida.';
+      this.passwordsMatch = true;
+    },
+    onPasswordInput(event) {
+      const trimmed = String(this.form.password || '').slice(0, 8);
+      this.form.password = trimmed;
+      if (event?.target && event.target.value !== trimmed) {
+        event.target.value = trimmed;
+      }
+      this.passwordCheckMsg = '';
+      this.passwordCheckOk = false;
+      this.passwordsMatch = false;
+    },
+    onConfirmPasswordInput(event) {
+      const trimmed = String(this.form.confirmPassword || '').slice(0, 8);
+      this.form.confirmPassword = trimmed;
+      if (event?.target && event.target.value !== trimmed) {
+        event.target.value = trimmed;
+      }
+      this.passwordsMatch = false;
+    },
+    onPasswordBeforeInput(field, event) {
+      const inputType = String(event?.inputType || '');
+      if (!inputType.startsWith('insert')) return;
+
+      const target = event.target;
+      const current = String(this.form[field] || '');
+      const selectionStart = typeof target.selectionStart === 'number' ? target.selectionStart : current.length;
+      const selectionEnd = typeof target.selectionEnd === 'number' ? target.selectionEnd : current.length;
+      const selectedLen = Math.max(0, selectionEnd - selectionStart);
+
+      if (current.length - selectedLen >= 8) {
+        event.preventDefault();
+      }
+    },
+    onPasswordKeydown(field, event) {
+      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+      if (event.ctrlKey || event.metaKey || allowedKeys.includes(event.key)) {
+        return;
+      }
+
+      const target = event.target;
+      const current = String(this.form[field] || '');
+      const selectionStart = typeof target.selectionStart === 'number' ? target.selectionStart : current.length;
+      const selectionEnd = typeof target.selectionEnd === 'number' ? target.selectionEnd : current.length;
+      const selectedLen = Math.max(0, selectionEnd - selectionStart);
+
+      if (current.length - selectedLen >= 8) {
+        event.preventDefault();
+      }
+    },
+    onPasswordPaste(field, event) {
+      const clip = event.clipboardData?.getData('text') || '';
+      const target = event.target;
+      const current = String(this.form[field] || '');
+      const selectionStart = typeof target.selectionStart === 'number' ? target.selectionStart : current.length;
+      const selectionEnd = typeof target.selectionEnd === 'number' ? target.selectionEnd : current.length;
+
+      const before = current.slice(0, selectionStart);
+      const after = current.slice(selectionEnd);
+      const maxPaste = Math.max(0, 8 - (before.length + after.length));
+      const clipped = clip.slice(0, maxPaste);
+
+      this.form[field] = `${before}${clipped}${after}`.slice(0, 8);
+      this.passwordsMatch = false;
+      if (field === 'password') {
+        this.passwordCheckMsg = '';
+        this.passwordCheckOk = false;
+      }
+    },
+    checkPasswordMatch() {
+      const policy = this.getPasswordPolicyResult(this.form.password || '');
+      if (!policy.ok) {
+        this.passwordCheckOk = false;
+        this.passwordCheckMsg = 'La contraseña no cumple la política.';
+        this.passwordsMatch = false;
+        return;
+      }
+      this.passwordCheckOk = true;
+      this.passwordCheckMsg = 'La contraseña cumple la política.';
+      this.passwordsMatch = (this.form.password || '') === (this.form.confirmPassword || '');
+    },
     validateEditPayload(payload) {
       const userPolicy = this.getUsuarioPolicyResult(payload.usuario);
       if (!userPolicy.ok) {
@@ -285,6 +445,9 @@ export default {
         const p = this.getPasswordPolicyResult(payload.password);
         if (!p.ok) {
           return 'Contraseña inválida. Debe tener exactamente 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.';
+        }
+        if (payload.password !== (this.form.confirmPassword || '')) {
+          return 'La confirmación de contraseña no coincide.';
         }
       }
 
@@ -314,9 +477,13 @@ export default {
     },
     openEdit(u) {
       this.selectedId = u.id;
-      this.form = { ...u, password: '' };
+      this.form = { ...u, password: '', confirmPassword: '' };
       this.previewFoto = this.resolveFotoUrl(u.foto) || '';
       this.fotoFile = null;
+      this.showPassword = false;
+      this.passwordCheckOk = false;
+      this.passwordCheckMsg = '';
+      this.passwordsMatch = false;
       this.showModal = true;
     },
     closeModal() {
@@ -325,6 +492,10 @@ export default {
       this.selectedId = null;
       this.fotoFile = null;
       this.previewFoto = '';
+      this.showPassword = false;
+      this.passwordCheckOk = false;
+      this.passwordCheckMsg = '';
+      this.passwordsMatch = false;
     },
     onSelectFoto(e) {
       const file = e.target.files && e.target.files[0];
@@ -340,6 +511,8 @@ export default {
           apellidoP: this.normalizarTexto(this.form.apellidoP),
           apellidoM: this.normalizarTexto(this.form.apellidoM),
           usuario: (this.form.usuario || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8),
+          password: (this.form.password || '').slice(0, 8),
+          confirmPassword: (this.form.confirmPassword || '').slice(0, 8),
           numeroControl: (this.form.numeroControl || '').replace(/\D/g, ''),
           telefono: (this.form.telefono || '').replace(/\D/g, ''),
           foto: this.form.foto || ''

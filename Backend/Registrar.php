@@ -65,6 +65,9 @@ if ($usuario === '' || $password_raw === '') {
 if ($usuario !== '' && !is_username_alnum_combo_exact8($usuario, false)) {
     $errors[] = 'usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres';
 }
+if ($password_raw !== '' && !is_password_strong_exact8($password_raw, false)) {
+    $errors[] = 'password debe tener exactamente 8 caracteres e incluir mayúscula, minúscula, número y carácter especial';
+}
 if ($tipo !== 'OFICINA' && $tipo !== 'MONITOR') {
     $errors[] = 'tipo inválido, solo OFICINA o MONITOR';
 }
