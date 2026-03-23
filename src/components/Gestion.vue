@@ -157,7 +157,7 @@
               </div>
               <div class="col-md-6" v-if="form.password">
                 <label class="form-label">Confirmar nueva contraseña</label>
-                <div class="input-group">
+                <div class="d-grid gap-2">
                   <input
                     v-model="form.confirmPassword"
                     :type="showPassword ? 'text' : 'password'"
@@ -170,7 +170,7 @@
                     @paste.prevent="onPasswordPaste('confirmPassword', $event)"
                     @input="onConfirmPasswordInput($event)"
                   />
-                  <button class="btn btn-outline-primary" type="button" @click="checkPasswordMatch">
+                  <button class="btn btn-outline-primary w-100" type="button" @click="checkPasswordMatch">
                     Comprobar
                   </button>
                 </div>
