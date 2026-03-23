@@ -667,11 +667,17 @@ export default {
 
       // Si tenemos datos de BD para este club, usarlos
       let alumnos = [];
-      if (club && club.id && this.alumnosPorClub[club.id]) {
-        alumnos = this.alumnosPorClub[club.id];
+      const alumnosBD = club && club.id ? this.alumnosPorClub[club.id] : null;
+      if (Array.isArray(alumnosBD) && alumnosBD.length > 0) {
+        alumnos = alumnosBD;
       } else {
-        // Fallback a props
-        alumnos = (this.alumnos || []).filter((a) => a.club === clubName);
+        // Fallback a props por id de club o por nombre de club
+        const clubId = club?.id ? Number(club.id) : null;
+        alumnos = (this.alumnos || []).filter((a) => {
+          const aClubId = Number(a.clubId ?? a.club_id ?? a.id_club ?? 0);
+          if (clubId && aClubId && aClubId === clubId) return true;
+          return a.club === clubName;
+        });
       }
 
       // Filtrar por búsqueda si hay query
@@ -1040,9 +1046,35 @@ export default {
       this.jefesSeleccionados[campo] = out;
     },
     inferGenero(nombre) {
-      const first = (nombre || '').trim().split(/\s+/)[0] || '';
+      const first = (nombre || '')
+        .toString()
+        .trim()
+        .split(/\s+/)[0]
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase();
+
       if (!first) return 'M';
-      return first.endsWith('A') ? 'F' : 'M';
+
+      const femeninos = new Set([
+        'BEATRIZ',
+        'LOURDES',
+        'GUADALUPE',
+        'CARMEN',
+        'ARIADNA',
+        'XIMENA',
+        'SOFIA',
+        'LUCIA',
+      ]);
+      const masculinos = new Set(['JESUS', 'JOSE', 'LUIS', 'CARLOS', 'JUAN', 'MIGUEL', 'URIEL']);
+
+      if (femeninos.has(first)) return 'F';
+      if (masculinos.has(first)) return 'M';
+
+      if (/A$|RIZ$|TRIZ$|DES$/.test(first)) return 'F';
+      if (/O$|OS$|EL$|ER$|AR$/.test(first)) return 'M';
+
+      return 'M';
     },
     tituloFirma(cargo) {
       const nombre = this.getNombreJefe(cargo).replace(/^C\.\s*/i, '');

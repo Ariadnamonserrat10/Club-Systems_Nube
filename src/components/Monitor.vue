@@ -41,8 +41,6 @@
     <!-- CONTENEDOR DE ASISTENCIAS -->
     <div class="card shadow-sm p-3 flex-grow-1 overflow-auto" style="max-height: 70vh;">
       <h5 class="text-secondary mb-3">Asistencias del Club</h5>
-      <pre>{{ clubs }}</pre>
-
       <!-- AGREGAR NUEVA FECHA -->
       <div class="mb-3">
         <label for="nuevaFecha" class="form-label">Agregar nueva fecha:</label>
@@ -105,7 +103,7 @@
 
 <script>
 import axios from "axios";
-import { getAsistenciasPorClub, crearFechaAsistencias, actualizarAsistencia, getAlumnos } from "../services/api";
+import { getAsistenciasPorClub, crearFechaAsistencias, actualizarAsistencia, getClubs } from "../services/api";
 import { BACKEND } from "../services/backend";
 
 export default {
@@ -155,6 +153,15 @@ export default {
     },
   },
   methods: {
+    syncClubNombre() {
+      const clubId = Number(this.usuarioActual.club_asignado);
+      if (!clubId) {
+        this.usuarioActual.club_nombre = null;
+        return;
+      }
+      const club = (this.clubsList || []).find(c => Number(c.id) === clubId);
+      this.usuarioActual.club_nombre = club?.nombre || this.usuarioActual.club_nombre || `Club ID ${clubId}`;
+    },
     resolveFotoUrl(foto) {
       if (!foto || typeof foto !== "string") return "";
       if (foto.startsWith("blob:")) return "";
@@ -182,6 +189,7 @@ export default {
           this.usuarioActual.club_asignado = datos.club_asignado ?? null;
           this.usuarioActual.club_nombre = datos.club_nombre ?? null;
           this.selectedClubId = this.usuarioActual.club_asignado;
+          this.syncClubNombre();
 
           // Si la BD devuelve el club asignado al monitor, opcionalmente actualizarlo
           if (datos.club_nombre) this.monitor.club = datos.club_nombre;
@@ -271,14 +279,9 @@ export default {
 
     async cargarClubs() {
       try {
-        const res = await axios.get(`${BACKEND}/Clubs.php`);
-        if (res.data?.status === "success" && Array.isArray(res.data.data)) {
-          console.log("RESPUESTA:", res.data);
-          console.log("CLUBS ARRAY:", res.data.data);
-          this.clubsList = res.data.data;
-        } else {
-          console.warn("No se obtuvieron clubs:", res.data);
-        }
+        const clubs = await getClubs();
+        this.clubsList = Array.isArray(clubs) ? clubs : [];
+        this.syncClubNombre();
       } catch (err) {
         console.error("Error cargando lista de clubs:", err);
       }
@@ -422,6 +425,7 @@ export default {
   },
   async mounted() {
     await this.cargarUsuarioActual();
+    await this.cargarClubs();
     await this.loadAsistencias();
   },
 };
