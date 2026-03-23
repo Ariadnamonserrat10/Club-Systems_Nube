@@ -126,59 +126,83 @@
               </div>
             </div>
             <div class="row g-2 mt-2">
-              <div class="col-md-6">
-                <label class="form-label">Nueva contraseña (opcional)</label>
-                <div class="d-grid gap-2">
+              <!-- Sección de contraseña con toggle -->
+              <div class="col-12">
+                <label class="form-label">Contraseña</label>
+                <!-- Vista bloqueada: indica que hay contraseña establecida -->
+                <div v-if="!cambiarPassword" class="d-flex gap-2 align-items-center">
                   <input
-                    v-model="form.password"
-                    :type="showPassword ? 'text' : 'password'"
+                    type="password"
                     class="form-control"
-                    minlength="8"
-                    maxlength="8"
-                    autocomplete="new-password"
-                    @beforeinput="onPasswordBeforeInput('password', $event)"
-                    @keydown="onPasswordKeydown('password', $event)"
-                    @paste.prevent="onPasswordPaste('password', $event)"
-                    @input="onPasswordInput($event)"
+                    :value="'placeholder'"
+                    disabled
+                    autocomplete="off"
+                    style="max-width:200px"
                   />
-                  <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary flex-fill" type="button" @click="showPassword = !showPassword">
-                      {{ showPassword ? 'Ocultar' : 'Mostrar' }}
-                    </button>
-                    <button class="btn btn-outline-success flex-fill" type="button" @click="fillWithGeneratedPassword">
-                      Generar
-                    </button>
-                  </div>
-                </div>
-                <small class="d-block" :class="passwordPolicy.hasLen8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
-                <small class="d-block" :class="passwordPolicy.hasUpper ? 'text-success' : 'text-danger'">Al menos 1 mayúscula.</small>
-                <small class="d-block" :class="passwordPolicy.hasLower ? 'text-success' : 'text-danger'">Al menos 1 minúscula.</small>
-                <small class="d-block" :class="passwordPolicy.hasDigit ? 'text-success' : 'text-danger'">Al menos 1 número.</small>
-                <small class="d-block" :class="passwordPolicy.hasSpecial ? 'text-success' : 'text-danger'">Al menos 1 carácter especial.</small>
-                <small v-if="passwordCheckMsg" class="d-block mt-1" :class="passwordCheckOk ? 'text-success' : 'text-danger'">{{ passwordCheckMsg }}</small>
-              </div>
-              <div class="col-md-6" v-if="form.password">
-                <label class="form-label">Confirmar nueva contraseña</label>
-                <div class="d-grid gap-2">
-                  <input
-                    v-model="form.confirmPassword"
-                    :type="showPassword ? 'text' : 'password'"
-                    class="form-control"
-                    minlength="8"
-                    maxlength="8"
-                    autocomplete="new-password"
-                    @beforeinput="onPasswordBeforeInput('confirmPassword', $event)"
-                    @keydown="onPasswordKeydown('confirmPassword', $event)"
-                    @paste.prevent="onPasswordPaste('confirmPassword', $event)"
-                    @input="onConfirmPasswordInput($event)"
-                  />
-                  <button class="btn btn-outline-primary w-100" type="button" @click="checkPasswordMatch">
-                    Comprobar
+                  <button class="btn btn-outline-warning" type="button" @click="iniciarCambioPassword">
+                    Cambiar contraseña
                   </button>
                 </div>
-                <small v-if="passwordsChecked" class="d-block mt-1" :class="passwordsMatch ? 'text-success' : 'text-danger'">
-                  {{ passwordsMatch ? 'Las contraseñas coinciden.' : 'Escribe y comprueba que coincidan.' }}
-                </small>
+                <!-- Vista de edición: campos para nueva contraseña -->
+                <div v-else class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label">Nueva contraseña</label>
+                    <div class="d-grid gap-2">
+                      <input
+                        v-model="form.password"
+                        :type="showPassword ? 'text' : 'password'"
+                        class="form-control"
+                        minlength="8"
+                        maxlength="8"
+                        autocomplete="new-password"
+                        @beforeinput="onPasswordBeforeInput('password', $event)"
+                        @keydown="onPasswordKeydown('password', $event)"
+                        @paste.prevent="onPasswordPaste('password', $event)"
+                        @input="onPasswordInput($event)"
+                      />
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary flex-fill" type="button" @click="showPassword = !showPassword">
+                          {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+                        </button>
+                        <button class="btn btn-outline-success flex-fill" type="button" @click="fillWithGeneratedPassword">
+                          Generar
+                        </button>
+                        <button class="btn btn-outline-danger flex-fill" type="button" @click="cancelarCambioPassword">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                    <small class="d-block" :class="passwordPolicy.hasLen8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
+                    <small class="d-block" :class="passwordPolicy.hasUpper ? 'text-success' : 'text-danger'">Al menos 1 mayúscula.</small>
+                    <small class="d-block" :class="passwordPolicy.hasLower ? 'text-success' : 'text-danger'">Al menos 1 minúscula.</small>
+                    <small class="d-block" :class="passwordPolicy.hasDigit ? 'text-success' : 'text-danger'">Al menos 1 número.</small>
+                    <small class="d-block" :class="passwordPolicy.hasSpecial ? 'text-success' : 'text-danger'">Al menos 1 carácter especial.</small>
+                    <small v-if="passwordCheckMsg" class="d-block mt-1" :class="passwordCheckOk ? 'text-success' : 'text-danger'">{{ passwordCheckMsg }}</small>
+                  </div>
+                  <div class="col-md-6" v-if="form.password">
+                    <label class="form-label">Confirmar nueva contraseña</label>
+                    <div class="d-grid gap-2">
+                      <input
+                        v-model="form.confirmPassword"
+                        :type="showPassword ? 'text' : 'password'"
+                        class="form-control"
+                        minlength="8"
+                        maxlength="8"
+                        autocomplete="new-password"
+                        @beforeinput="onPasswordBeforeInput('confirmPassword', $event)"
+                        @keydown="onPasswordKeydown('confirmPassword', $event)"
+                        @paste.prevent="onPasswordPaste('confirmPassword', $event)"
+                        @input="onConfirmPasswordInput($event)"
+                      />
+                      <button class="btn btn-outline-primary w-100" type="button" @click="checkPasswordMatch">
+                        Comprobar
+                      </button>
+                    </div>
+                    <small v-if="passwordsChecked" class="d-block mt-1" :class="passwordsMatch ? 'text-success' : 'text-danger'">
+                      {{ passwordsMatch ? 'Las contraseñas coinciden.' : 'Escribe y comprueba que coincidan.' }}
+                    </small>
+                  </div>
+                </div>
               </div>
               <div class="col-md-6" v-if="form.tipo === 'MONITOR'">
                 <label class="form-label">Teléfono</label>
@@ -221,6 +245,7 @@ export default {
       fotoFile: null,
       previewFoto: '',
       showPassword: false,
+      cambiarPassword: false,
       passwordCheckOk: false,
       passwordCheckMsg: '',
       passwordsMatch: false,
@@ -417,6 +442,26 @@ export default {
         this.passwordCheckOk = false;
       }
     },
+    iniciarCambioPassword() {
+      this.cambiarPassword = true;
+      this.form.password = '';
+      this.form.confirmPassword = '';
+      this.showPassword = false;
+      this.passwordCheckMsg = '';
+      this.passwordCheckOk = false;
+      this.passwordsMatch = false;
+      this.passwordsChecked = false;
+    },
+    cancelarCambioPassword() {
+      this.cambiarPassword = false;
+      this.form.password = '';
+      this.form.confirmPassword = '';
+      this.showPassword = false;
+      this.passwordCheckMsg = '';
+      this.passwordCheckOk = false;
+      this.passwordsMatch = false;
+      this.passwordsChecked = false;
+    },
     checkPasswordMatch() {
       this.passwordsChecked = true;
       const policy = this.getPasswordPolicyResult(this.form.password || '');
@@ -490,6 +535,7 @@ export default {
       this.previewFoto = this.resolveFotoUrl(u.foto) || '';
       this.fotoFile = null;
       this.showPassword = false;
+      this.cambiarPassword = false;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
@@ -502,7 +548,8 @@ export default {
       this.selectedId = null;
       this.fotoFile = null;
       this.previewFoto = '';
-      this.showPassword = true;
+      this.showPassword = false;
+      this.cambiarPassword = false;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
@@ -532,6 +579,11 @@ export default {
         if (payload.tipo === 'OFICINA') {
           payload.numeroControl = '';
           payload.telefono = '';
+        }
+
+        if (!this.cambiarPassword) {
+          payload.password = '';
+          payload.confirmPassword = '';
         }
 
         const validationError = this.validateEditPayload(payload);
