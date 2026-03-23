@@ -220,7 +220,7 @@ export default {
       selectedId: null,
       fotoFile: null,
       previewFoto: '',
-      showPassword: false,
+      showPassword: true,
       passwordCheckOk: false,
       passwordCheckMsg: '',
       passwordsMatch: false,
@@ -489,7 +489,7 @@ export default {
       this.form = { ...u, password: '', confirmPassword: '' };
       this.previewFoto = this.resolveFotoUrl(u.foto) || '';
       this.fotoFile = null;
-      this.showPassword = false;
+      this.showPassword = true;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
@@ -502,7 +502,7 @@ export default {
       this.selectedId = null;
       this.fotoFile = null;
       this.previewFoto = '';
-      this.showPassword = false;
+      this.showPassword = true;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
