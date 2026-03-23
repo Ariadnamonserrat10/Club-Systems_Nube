@@ -220,7 +220,7 @@ export default {
       selectedId: null,
       fotoFile: null,
       previewFoto: '',
-      showPassword: true,
+      showPassword: false,
       passwordCheckOk: false,
       passwordCheckMsg: '',
       passwordsMatch: false,
@@ -341,7 +341,7 @@ export default {
       const generated = this.generatePassword(8);
       this.form.password = generated;
       this.form.confirmPassword = generated;
-      this.showPassword = true;
+      this.showPassword = false;
       this.passwordCheckOk = true;
       this.passwordCheckMsg = 'Contraseña generada y válida.';
       this.passwordsMatch = true;
@@ -489,7 +489,7 @@ export default {
       this.form = { ...u, password: '', confirmPassword: '' };
       this.previewFoto = this.resolveFotoUrl(u.foto) || '';
       this.fotoFile = null;
-      this.showPassword = true;
+      this.showPassword = false;
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
