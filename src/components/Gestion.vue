@@ -176,7 +176,7 @@
                     Comprobar
                   </button>
                 </div>
-                <small class="d-block mt-1" :class="passwordsMatch ? 'text-success' : 'text-danger'">
+                <small v-if="passwordsChecked" class="d-block mt-1" :class="passwordsMatch ? 'text-success' : 'text-danger'">
                   {{ passwordsMatch ? 'Las contraseñas coinciden.' : 'Escribe y comprueba que coincidan.' }}
                 </small>
               </div>
@@ -224,6 +224,7 @@ export default {
       passwordCheckOk: false,
       passwordCheckMsg: '',
       passwordsMatch: false,
+      passwordsChecked: false,
       placeholder: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
       localMsg: '',
       localMsgType: 'error',
@@ -344,6 +345,7 @@ export default {
       this.passwordCheckOk = true;
       this.passwordCheckMsg = 'Contraseña generada y válida.';
       this.passwordsMatch = true;
+      this.passwordsChecked = true;
     },
     onPasswordInput(event) {
       const trimmed = String(this.form.password || '').slice(0, 8);
@@ -354,6 +356,7 @@ export default {
       this.passwordCheckMsg = '';
       this.passwordCheckOk = false;
       this.passwordsMatch = false;
+      this.passwordsChecked = false;
     },
     onConfirmPasswordInput(event) {
       const trimmed = String(this.form.confirmPassword || '').slice(0, 8);
@@ -362,6 +365,7 @@ export default {
         event.target.value = trimmed;
       }
       this.passwordsMatch = false;
+      this.passwordsChecked = false;
     },
     onPasswordBeforeInput(field, event) {
       const inputType = String(event?.inputType || '');
@@ -407,12 +411,14 @@ export default {
 
       this.form[field] = `${before}${clipped}${after}`.slice(0, 8);
       this.passwordsMatch = false;
+      this.passwordsChecked = false;
       if (field === 'password') {
         this.passwordCheckMsg = '';
         this.passwordCheckOk = false;
       }
     },
     checkPasswordMatch() {
+      this.passwordsChecked = true;
       const policy = this.getPasswordPolicyResult(this.form.password || '');
       if (!policy.ok) {
         this.passwordCheckOk = false;
@@ -420,6 +426,7 @@ export default {
         this.passwordsMatch = false;
         return;
       }
+      this.form.confirmPassword = String(this.form.password || '').slice(0, 8);
       this.passwordCheckOk = true;
       this.passwordCheckMsg = 'La contraseña cumple la política.';
       this.passwordsMatch = (this.form.password || '') === (this.form.confirmPassword || '');
@@ -486,6 +493,7 @@ export default {
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
+      this.passwordsChecked = false;
       this.showModal = true;
     },
     closeModal() {
@@ -498,6 +506,7 @@ export default {
       this.passwordCheckOk = false;
       this.passwordCheckMsg = '';
       this.passwordsMatch = false;
+      this.passwordsChecked = false;
     },
     onSelectFoto(e) {
       const file = e.target.files && e.target.files[0];
