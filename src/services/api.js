@@ -82,8 +82,19 @@ export const getCarreras = async () => {
 };
 
 // ================= ASISTENCIAS =================
-export const getAsistenciasPorClub = (clubId) =>
-  request(`${ASISTENCIAS}?club_id=${clubId}`);
+export const getAsistenciasPorClub = async (clubId) => {
+  const data = await request(`${ASISTENCIAS}?club_id=${clubId}`);
+  // Backends PHP suelen envolver payload como { status, data }
+  const payload = data && typeof data === 'object' && !Array.isArray(data) && data.data
+    ? data.data
+    : data;
+
+  return {
+    fechas: Array.isArray(payload?.fechas) ? payload.fechas : [],
+    alumnos: Array.isArray(payload?.alumnos) ? payload.alumnos : [],
+    asistencias: payload?.asistencias && typeof payload.asistencias === 'object' ? payload.asistencias : {}
+  };
+};
 
 export const crearFechaAsistencias = (payload) =>
   request(ASISTENCIAS, {
