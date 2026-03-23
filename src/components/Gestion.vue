@@ -44,7 +44,7 @@
           <td>{{ u.nombre }} {{ u.apellidoP }} {{ u.apellidoM }}</td>
           <td>{{ u.usuario }}</td>
           <td><span class="badge" :class="u.tipo==='OFICINA'?'bg-primary':'bg-info'">{{ u.tipo }}</span></td>
-          <td>{{ u.club_asignado || '-' }}</td>
+          <td>{{ getClubName(u.club_asignado) }}</td>
           <td>
             <button class="btn btn-warning btn-sm me-2" @click="openEdit(u)">Editar</button>
             <button class="btn btn-danger btn-sm" @click="requestDelete(u)">Eliminar</button>
@@ -109,8 +109,11 @@
                 </select>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Club asignado (id)</label>
-                <input v-model.number="form.club_asignado" type="number" class="form-control"/>
+                <label class="form-label">Club asignado</label>
+                <select v-model.number="form.club_asignado" class="form-select">
+                  <option :value="null">Sin club</option>
+                  <option v-for="c in clubsList" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+                </select>
               </div>
               <div class="col-md-4" v-if="form.tipo === 'MONITOR'">
                 <label class="form-label">Número de control</label>
@@ -230,7 +233,7 @@
 </template>
 
 <script>
-import { getUsuarios, updateUsuario, deleteUsuario, uploadFoto } from '../services/api';
+import { getUsuarios, getClubs, updateUsuario, deleteUsuario, uploadFoto } from '../services/api';
 import { BACKEND } from '../services/backend';
 
 export default {
@@ -242,6 +245,7 @@ export default {
       list: [],
       showModal: false,
       form: {},
+      clubsList: [],
       selectedId: null,
       fotoFile: null,
       previewFoto: '',
@@ -276,6 +280,12 @@ export default {
     }
   },
   methods: {
+    getClubName(clubId) {
+      const id = Number(clubId);
+      if (!id) return '-';
+      const club = this.clubsList.find(c => Number(c.id) === id);
+      return club?.nombre || `ID ${id}`;
+    },
     notifyError(msg) {
       if (this.$root && typeof this.$root.showError === 'function') {
         this.$root.showError(msg);
@@ -531,6 +541,15 @@ export default {
         this.notifyError(e.message || 'Error al cargar usuarios');
       }
     },
+    async loadClubs() {
+      try {
+        const clubs = await getClubs();
+        this.clubsList = Array.isArray(clubs) ? clubs : [];
+      } catch (e) {
+        console.error(e);
+        this.clubsList = [];
+      }
+    },
     openEdit(u) {
       this.selectedId = u.id;
       this.form = { ...u, password: '', confirmPassword: '' };
@@ -577,6 +596,7 @@ export default {
           confirmPassword: (this.form.confirmPassword || '').slice(0, 8),
           numeroControl: (this.form.numeroControl || '').replace(/\D/g, ''),
           telefono: (this.form.telefono || '').replace(/\D/g, ''),
+          club_asignado: this.form.club_asignado ? Number(this.form.club_asignado) : null,
           foto: this.form.foto || ''
         };
 
@@ -635,6 +655,7 @@ export default {
     }
   },
   mounted() {
+    this.loadClubs();
     this.loadUsuarios();
   }
 };
