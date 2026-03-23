@@ -128,7 +128,7 @@
             <div class="row g-2 mt-2">
               <div class="col-md-6">
                 <label class="form-label">Nueva contraseña (opcional)</label>
-                <div class="input-group">
+                <div class="d-grid gap-2">
                   <input
                     v-model="form.password"
                     :type="showPassword ? 'text' : 'password'"
@@ -141,12 +141,14 @@
                     @paste.prevent="onPasswordPaste('password', $event)"
                     @input="onPasswordInput($event)"
                   />
-                  <button class="btn btn-outline-secondary" type="button" @click="showPassword = !showPassword">
-                    {{ showPassword ? 'Ocultar' : 'Mostrar' }}
-                  </button>
-                  <button class="btn btn-outline-success" type="button" @click="fillWithGeneratedPassword">
-                    Generar
-                  </button>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary flex-fill" type="button" @click="showPassword = !showPassword">
+                      {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+                    </button>
+                    <button class="btn btn-outline-success flex-fill" type="button" @click="fillWithGeneratedPassword">
+                      Generar
+                    </button>
+                  </div>
                 </div>
                 <small class="d-block" :class="passwordPolicy.hasLen8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
                 <small class="d-block" :class="passwordPolicy.hasUpper ? 'text-success' : 'text-danger'">Al menos 1 mayúscula.</small>
