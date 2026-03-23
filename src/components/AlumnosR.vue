@@ -339,11 +339,31 @@ export default {
 .toast-local { position: fixed; right: 12px; bottom: 12px; padding: 10px 14px; border-radius: 6px; color: #fff; z-index: 2100; }
 .toast-local.success { background: #43a047; }
 .toast-local.error { background: #e53935; }
-.actions { display: inline-flex; gap: 8px; align-items: center; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.actions .btn {
+  min-width: 88px;
+  white-space: nowrap;
+  text-align: center;
+}
 .col-carrera { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .col-sem { width: 80px; text-align: center; }
 .col-control { width: 130px; }
 .col-tel { width: 140px; }
 .col-club { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.col-acciones { width: 160px; }
+.col-acciones { width: 210px; }
+
+@media (max-width: 1200px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions .btn {
+    width: 100%;
+  }
+}
 </style>
