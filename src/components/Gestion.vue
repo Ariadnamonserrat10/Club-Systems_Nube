@@ -130,19 +130,17 @@
               <div class="col-12">
                 <label class="form-label">Contraseña</label>
                 <!-- Vista bloqueada: indica que hay contraseña establecida -->
-                <div v-if="!cambiarPassword" class="d-flex gap-2 align-items-center">
+                <div v-if="!cambiarPassword" class="d-flex gap-2 align-items-center flex-wrap">
                   <input
-                    :type="showCurrentPassword ? 'text' : 'password'"
+                    type="password"
                     class="form-control"
-                    :value="'\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF'"
+                    value="placeholder"
                     disabled
                     autocomplete="off"
                     style="max-width:160px"
                   />
-                  <button class="btn btn-outline-secondary" type="button" @click="showCurrentPassword = !showCurrentPassword">
-                    {{ showCurrentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña' }}
-                  </button>
-                  <button class="btn btn-outline-warning" type="button" @click="iniciarCambioPassword">
+                  <small class="text-muted fst-italic">La contraseña está cifrada y no puede visualizarse.</small>
+                  <button class="btn btn-outline-warning ms-auto" type="button" @click="iniciarCambioPassword">
                     Cambiar contraseña
                   </button>
                 </div>
