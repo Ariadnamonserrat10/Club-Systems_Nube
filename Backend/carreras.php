@@ -12,6 +12,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 include __DIR__ . "/db.php";
 
+function seedDefaultCarreras(mysqli $conexion)
+{
+    $defaultCarreras = [
+        'Ingeniería Civil',
+        'Ingeniería Industrial',
+        'Ingeniería en Sistemas Computacionales',
+        'Ingeniería en Gestión Empresarial',
+        'Licenciatura en Administración',
+        'Licenciatura en Arquitectura',
+        'Ingeniería en Mecatrónica',
+    ];
+
+    $stmtInsert = $conexion->prepare('INSERT INTO carreras (nombre) VALUES (?)');
+    if (!$stmtInsert) {
+        return;
+    }
+
+    foreach ($defaultCarreras as $nombreCarrera) {
+        $stmtCheck = $conexion->prepare('SELECT id FROM carreras WHERE nombre = ? LIMIT 1');
+        if (!$stmtCheck) {
+            continue;
+        }
+        $stmtCheck->bind_param('s', $nombreCarrera);
+        $stmtCheck->execute();
+        $resCheck = $stmtCheck->get_result();
+        $exists = $resCheck && $resCheck->num_rows > 0;
+        $stmtCheck->close();
+
+        if (!$exists) {
+            $stmtInsert->bind_param('s', $nombreCarrera);
+            $stmtInsert->execute();
+        }
+    }
+
+    $stmtInsert->close();
+}
+
 if (!isset($conexion) || !($conexion instanceof mysqli)) {
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Conexión a BD no disponible']);
@@ -28,6 +65,18 @@ try {
             // Normalizar tipos: id como entero
             $row['id'] = (int)$row['id'];
             $rows[] = $row;
+        }
+    }
+
+    if (empty($rows)) {
+        seedDefaultCarreras($conexion);
+
+        $result = $conexion->query($sql);
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $row['id'] = (int)$row['id'];
+                $rows[] = $row;
+            }
         }
     }
 

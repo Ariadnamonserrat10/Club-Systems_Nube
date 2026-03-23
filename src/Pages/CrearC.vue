@@ -36,6 +36,15 @@ const fotoFile = ref(null);
 
 // catálogo de carreras desde backend
 const carreras = ref([]);
+const carrerasFallback = [
+  { id: 1, nombre: 'Ingeniería Civil' },
+  { id: 2, nombre: 'Ingeniería Industrial' },
+  { id: 3, nombre: 'Ingeniería en Sistemas Computacionales' },
+  { id: 4, nombre: 'Ingeniería en Gestión Empresarial' },
+  { id: 5, nombre: 'Licenciatura en Administración' },
+  { id: 6, nombre: 'Licenciatura en Arquitectura' },
+  { id: 7, nombre: 'Ingeniería en Mecatrónica' },
+];
 
 // Mostrar/ocultar contraseña y generador seguro
 const showPassword = ref(false);
@@ -186,11 +195,31 @@ onMounted(async () => {
   // cargar carreras desde backend
   try {
     const list = await getCarreras();
-    if (Array.isArray(list)) {
+    if (Array.isArray(list) && list.length > 0) {
       carreras.value = list;
+      return;
     }
   } catch (err) {
     console.warn("No se pudieron cargar carreras (carreras.php):", err.message);
+  }
+
+  // Fallback: algunos despliegues exponen PHP bajo /Backend
+  try {
+    const alt = await axios.get(`${window.location.origin}/Backend/carreras.php`);
+    const altData = Array.isArray(alt?.data)
+      ? alt.data
+      : (Array.isArray(alt?.data?.data) ? alt.data.data : []);
+    if (altData.length > 0) {
+      carreras.value = altData;
+      return;
+    }
+  } catch (err) {
+    console.warn("Fallback de carreras falló (/Backend/carreras.php):", err.message);
+  }
+
+  if (carreras.value.length === 0) {
+    carreras.value = carrerasFallback;
+    alertError.value = "No se pudo cargar el catálogo desde el servidor. Se muestran carreras base de respaldo.";
   }
 });
 
@@ -526,7 +555,7 @@ const goToLogin = () => {
             <small class="text-muted">Debe incluir mayúscula, minúscula, número y carácter especial.</small>
           </div>
           <div class="col-md-4">
-            <div class="input-group">
+            <div class="d-grid gap-2">
               <input
                 v-model="form.confirmPassword"
                 :type="showPassword ? 'text' : 'password'"
@@ -536,22 +565,24 @@ const goToLogin = () => {
                 maxlength="8"
                 required
               />
-              <button
-                class="btn btn-outline-success"
-                type="button"
-                @click="fillWithGenerated"
-                title="Generar contraseña segura (8)"
-              >
-                Generar
-              </button>
-              <button
-                class="btn btn-outline-primary"
-                type="button"
-                @click="checkPassword"
-                title="Comprobar que cumple requisitos"
-              >
-                Comprobar
-              </button>
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-outline-success flex-fill"
+                  type="button"
+                  @click="fillWithGenerated"
+                  title="Generar contraseña segura (8)"
+                >
+                  Generar
+                </button>
+                <button
+                  class="btn btn-outline-primary flex-fill"
+                  type="button"
+                  @click="checkPassword"
+                  title="Comprobar que cumple requisitos"
+                >
+                  Comprobar
+                </button>
+              </div>
             </div>
           </div>
         </div>

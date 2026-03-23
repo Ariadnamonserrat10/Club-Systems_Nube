@@ -72,7 +72,14 @@ export const deleteClub = (id) =>
   request(`${CLUBS}?id=${id}`, { method: 'DELETE' });
 
 // ================= CARRERAS =================
-export const getCarreras = () => request(CARRERAS);
+export const getCarreras = async () => {
+  const data = await request(CARRERAS);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.carreras)) return data.carreras;
+  if (Array.isArray(data?.rows)) return data.rows;
+  return [];
+};
 
 // ================= ASISTENCIAS =================
 export const getAsistenciasPorClub = (clubId) =>
