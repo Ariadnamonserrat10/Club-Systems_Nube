@@ -56,8 +56,8 @@ try {
       exit;
     }
 
-    // Obtener alumnos del club
-    $stmtA = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM FROM alumnos WHERE id_club = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
+    // Obtener alumnos del club con datos necesarios para constancias
+    $stmtA = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM, numeroControl, carrera_id, semestre_id, id_club FROM alumnos WHERE id_club = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
     $stmtA->bind_param('i', $clubId);
     $stmtA->execute();
     $resA = $stmtA->get_result();

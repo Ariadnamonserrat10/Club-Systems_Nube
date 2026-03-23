@@ -861,7 +861,7 @@ export default {
 
       const data = {
         estudianteNombre: `${alumno.nombre} ${alumno.apellidoP} ${alumno.apellidoM || ''}`.trim(),
-        numeroControl: alumno.numeroControl || 'SIN CONTROL',
+        numeroControl: alumno.numeroControl || alumno.control || 'SIN CONTROL',
         carrera: alumno.carrera || (this.carreras && this.carreras[0] ? this.carreras[0].nombre : 'SIN CARRERA'),
         club: (alumno.club || clubNombre || '').toLowerCase(),
         desempeno: desempeno,
