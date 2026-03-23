@@ -168,10 +168,10 @@
                         <button class="btn btn-outline-success flex-fill" type="button" @click="fillWithGeneratedPassword">
                           Generar
                         </button>
-                        <button class="btn btn-outline-danger flex-fill" type="button" @click="cancelarCambioPassword">
-                          Cancelar
-                        </button>
                       </div>
+                      <button class="btn btn-outline-danger w-100" type="button" @click="cancelarCambioPassword">
+                        Cancelar cambio
+                      </button>
                     </div>
                     <small class="d-block" :class="passwordPolicy.hasLen8 ? 'text-success' : 'text-danger'">Exactamente 8 caracteres.</small>
                     <small class="d-block" :class="passwordPolicy.hasUpper ? 'text-success' : 'text-danger'">Al menos 1 mayúscula.</small>
