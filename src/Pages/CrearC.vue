@@ -2,13 +2,13 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
-import { getCarreras } from "../services/api";
+import { getCarreras, uploadFoto } from "../services/api";
 import { BACKEND } from "../services/backend";
 
 const router = useRouter();
 
 // lista de clubs y selección
-const clubsList = ref([]);
+const clubs = ref([]);
 const selectedClubId = ref(null);
 
 const userType = ref("oficina");
@@ -31,8 +31,20 @@ const form = ref({
   foto: null,
 });
 
+const fotoPreview = ref(null);
+const fotoFile = ref(null);
+
 // catálogo de carreras desde backend
 const carreras = ref([]);
+const carrerasFallback = [
+  { id: 1, nombre: 'Ingeniería Civil' },
+  { id: 2, nombre: 'Ingeniería Industrial' },
+  { id: 3, nombre: 'Ingeniería en Sistemas Computacionales' },
+  { id: 4, nombre: 'Ingeniería en Gestión Empresarial' },
+  { id: 5, nombre: 'Licenciatura en Administración' },
+  { id: 6, nombre: 'Licenciatura en Arquitectura' },
+  { id: 7, nombre: 'Ingeniería en Mecatrónica' },
+];
 
 // Mostrar/ocultar contraseña y generador seguro
 const showPassword = ref(false);
@@ -42,13 +54,15 @@ const generatePassword = (length = 8) => {
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const lower = 'abcdefghijklmnopqrstuvwxyz';
   const digits = '0123456789';
-  const all = upper + lower + digits;
+  const special = '!@#$%^&*';
+  const all = upper + lower + digits + special;
 
   let pwd = '';
   const pick = (set) => set[Math.floor(Math.random() * set.length)];
   pwd += pick(upper);
   pwd += pick(lower);
   pwd += pick(digits);
+  pwd += pick(special);
 
   const remaining = Math.max(0, length - pwd.length);
   if (window.crypto && window.crypto.getRandomValues) {
@@ -85,8 +99,20 @@ const selectUserType = (type) => {
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (file) {
-    form.value.foto = URL.createObjectURL(file);
+    fotoFile.value = file;
+    if (fotoPreview.value && fotoPreview.value.startsWith("blob:")) {
+      URL.revokeObjectURL(fotoPreview.value);
+    }
+    fotoPreview.value = URL.createObjectURL(file);
   }
+};
+
+const resolveFotoUrl = (foto) => {
+  if (!foto || typeof foto !== "string") return "";
+  if (foto.startsWith("blob:")) return "";
+  if (/^https?:\/\//i.test(foto)) return foto;
+  const path = foto.startsWith("/") ? foto.slice(1) : foto;
+  return `${BACKEND}/${path}`;
 };
 
 // validación de complejidad de contraseña ingresada por usuario
@@ -99,7 +125,8 @@ const meetsPolicy = (pwd) => {
   const hasUpper = /[A-Z]/.test(pwd);
   const hasLower = /[a-z]/.test(pwd);
   const hasDigit = /\d/.test(pwd);
-  return { ok: hasLen8 && hasUpper && hasLower && hasDigit, hasLen8, hasUpper, hasLower, hasDigit };
+  const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+  return { ok: hasLen8 && hasUpper && hasLower && hasDigit && hasSpecial, hasLen8, hasUpper, hasLower, hasDigit, hasSpecial };
 };
 
 const checkPassword = () => {
@@ -108,14 +135,13 @@ const checkPassword = () => {
   passwordCheckOk.value = res.ok;
   if (res.ok) {
     passwordCheckMsg.value = 'La contraseña cumple con los requisitos.';
-    // Autocompletar Confirmar contraseña solo si aprueba
-    form.value.confirmPassword = form.value.password;
   } else {
     const parts = [];
     if (!res.hasLen8) parts.push('exactamente 8 caracteres');
     if (!res.hasUpper) parts.push('al menos 1 mayúscula');
     if (!res.hasLower) parts.push('al menos 1 minúscula');
     if (!res.hasDigit) parts.push('al menos 1 número');
+    if (!res.hasSpecial) parts.push('al menos 1 carácter especial');
     passwordCheckMsg.value = 'Falta: ' + parts.join(', ');
   }
 };
@@ -127,25 +153,73 @@ const onPasswordInput = () => {
   passwordCheckMsg.value = '';
 };
 
+const normalizarTexto = (valor) => {
+  const limpio = String(valor || '')
+    .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return limpio
+    .split(' ')
+    .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+    .join(' ')
+    .trim();
+};
+
+const soloNumeros = (valor) => String(valor || '').replace(/\D/g, '');
+const soloUsuarioAlnum8 = (valor) => String(valor || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
+const usuarioPolicy = (valor) => {
+  const v = String(valor || '');
+  return {
+    onlyAlnum: /^[A-Za-z0-9]*$/.test(v),
+    len8: v.length === 8,
+    hasLetterAndDigit: /[A-Za-z]/.test(v) && /\d/.test(v)
+  };
+};
+
 // cargar lista de clubs (si existe endpoint)
-onMounted(async () => {
+const obtenerClubs = async () => {
   try {
-    const res = await axios.get(`${BACKEND}/getClubs.php`);
-    if (res.data?.status === "success" && Array.isArray(res.data.data)) {
-      clubsList.value = res.data.data;
-    }
+    const res = await axios.get(`${BACKEND}/Clubs.php`);
+    console.log("RESPUESTA:", res.data);
+    console.log("CLUBS ARRAY:", res.data.data);
+
+    clubs.value = res.data.data;
   } catch (err) {
-    console.warn("No se pudieron cargar clubs (getClubs.php):", err.message);
+    console.warn("No se pudieron cargar clubs (Clubs.php):", err.message);
   }
+};
+
+onMounted(async () => {
+  obtenerClubs();
 
   // cargar carreras desde backend
   try {
     const list = await getCarreras();
-    if (Array.isArray(list)) {
+    if (Array.isArray(list) && list.length > 0) {
       carreras.value = list;
+      return;
     }
   } catch (err) {
     console.warn("No se pudieron cargar carreras (carreras.php):", err.message);
+  }
+
+  // Fallback: algunos despliegues exponen PHP bajo /Backend
+  try {
+    const alt = await axios.get(`${window.location.origin}/Backend/carreras.php`);
+    const altData = Array.isArray(alt?.data)
+      ? alt.data
+      : (Array.isArray(alt?.data?.data) ? alt.data.data : []);
+    if (altData.length > 0) {
+      carreras.value = altData;
+      return;
+    }
+  } catch (err) {
+    console.warn("Fallback de carreras falló (/Backend/carreras.php):", err.message);
+  }
+
+  if (carreras.value.length === 0) {
+    carreras.value = carrerasFallback;
+    alertError.value = "No se pudo cargar el catálogo desde el servidor. Se muestran carreras base de respaldo.";
   }
 });
 
@@ -153,13 +227,27 @@ onMounted(async () => {
 const handleRegister = async () => {
   alertError.value = "";
 
+  form.value.nombre = normalizarTexto(form.value.nombre);
+  form.value.apellidoP = normalizarTexto(form.value.apellidoP);
+  form.value.apellidoM = normalizarTexto(form.value.apellidoM);
+  form.value.numeroControl = soloNumeros(form.value.numeroControl);
+  form.value.telefono = soloNumeros(form.value.telefono);
+  form.value.usuario = soloUsuarioAlnum8(form.value.usuario);
+
+  const up = usuarioPolicy(form.value.usuario);
+  if (!(up.onlyAlnum && up.len8 && up.hasLetterAndDigit)) {
+    alertError.value = "El usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres";
+    return;
+  }
+
   if (form.value.password !== form.value.confirmPassword) {
     alertError.value = "Las contraseñas no coinciden";
     return;
   }
 
-  if (form.value.password.length !== 8) {
-    alertError.value = "La contraseña debe tener exactamente 8 caracteres";
+  const passwordPolicy = meetsPolicy(form.value.password || '');
+  if (!passwordPolicy.ok) {
+    alertError.value = "La contraseña debe tener exactamente 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial";
     return;
   }
 
@@ -176,9 +264,16 @@ const handleRegister = async () => {
   }
 
   try {
+    let fotoPath = null;
+    if (fotoFile.value) {
+      const up = await uploadFoto(fotoFile.value);
+      fotoPath = up?.file || null;
+    }
+
     // enviar club_asignado si se seleccionó (mantener compatibilidad con backend)
     const payload = {
       ...form.value,
+      foto: fotoPath,
       tipo: userType.value === "oficina" ? "OFICINA" : "MONITOR",
       // el backend espera 'tipo' (OFICINA | MONITOR)
       club_asignado: selectedClubId.value ? Number(selectedClubId.value) : null,
@@ -196,19 +291,26 @@ const handleRegister = async () => {
         numeroControl: form.value.numeroControl || "N/A",
         carrera: form.value.carrera || "N/A",
         telefono: form.value.telefono || "N/A",
-        foto: form.value.foto || null,
+        foto: fotoPath,
       };
       showSuccessModal.value = true;
     } else {
+      const details = Array.isArray(response.data?.details)
+        ? response.data.details.filter(Boolean).join('. ')
+        : '';
       alertError.value =
-        response.data.message || "Error al registrar el usuario.";
+        details || response.data.message || "Error al registrar el usuario.";
     }
   } catch (error) {
     console.error("Axios error completo:", error);
     if (error.response) {
       console.error("Response status:", error.response.status);
       console.error("Response data:", error.response.data);
+      const details = Array.isArray(error.response.data?.details)
+        ? error.response.data.details.filter(Boolean).join('. ')
+        : '';
       alertError.value =
+        details ||
         error.response.data?.message ||
         error.response.data?.error ||
         JSON.stringify(error.response.data) ||
@@ -238,6 +340,11 @@ const resetForm = () => {
     confirmPassword: "",
     foto: null,
   };
+  fotoFile.value = null;
+  if (fotoPreview.value && fotoPreview.value.startsWith("blob:")) {
+    URL.revokeObjectURL(fotoPreview.value);
+  }
+  fotoPreview.value = null;
   userType.value = "oficina";
   alertError.value = "";
   alertInfo.value = true;
@@ -325,8 +432,8 @@ const goToLogin = () => {
         <!-- Imagen -->
         <div class="text-center mb-3">
           <img
-            v-if="form.foto"
-            :src="form.foto"
+            v-if="fotoPreview"
+            :src="fotoPreview"
             alt="Foto de perfil"
             class="rounded-circle shadow-sm mb-2 border"
             width="100"
@@ -408,7 +515,7 @@ const goToLogin = () => {
           <label for="clubSelect" class="form-label">Club asignado (opcional)</label>
           <select id="clubSelect" v-model="selectedClubId" class="form-select">
             <option :value="null">-- Ninguno --</option>
-            <option v-for="c in clubsList" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+            <option v-for="c in clubs" :key="c.id" :value="c.id">{{ c.nombre }}</option>
           </select>
         </div>
 
@@ -417,8 +524,10 @@ const goToLogin = () => {
           <div class="col-md-4">
             <input
               v-model="form.usuario"
+              @input="form.usuario = soloUsuarioAlnum8(form.usuario)"
               class="form-control"
               placeholder="Usuario"
+              maxlength="8"
               required
             />
           </div>
@@ -429,7 +538,7 @@ const goToLogin = () => {
                 @input="onPasswordInput"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-control"
-                placeholder="Contraseña (8 caracteres)"
+                placeholder="Contraseña (8, con especial)"
                 minlength="8"
                 maxlength="8"
                 required
@@ -443,10 +552,10 @@ const goToLogin = () => {
                 <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
               </button>
             </div>
-            <small class="text-muted">Sugerida: alfanumérica de 8 caracteres</small>
+            <small class="text-muted">Debe incluir mayúscula, minúscula, número y carácter especial.</small>
           </div>
           <div class="col-md-4">
-            <div class="input-group">
+            <div class="d-grid gap-2">
               <input
                 v-model="form.confirmPassword"
                 :type="showPassword ? 'text' : 'password'"
@@ -456,24 +565,24 @@ const goToLogin = () => {
                 maxlength="8"
                 required
               />
-              <button
-                v-if="!form.password"
-                class="btn btn-outline-success"
-                type="button"
-                @click="fillWithGenerated"
-                title="Generar contraseña segura (8)"
-              >
-                Generar
-              </button>
-              <button
-                v-else
-                class="btn btn-outline-primary"
-                type="button"
-                @click="checkPassword"
-                title="Comprobar que cumple requisitos"
-              >
-                Comprobar
-              </button>
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-outline-success flex-fill"
+                  type="button"
+                  @click="fillWithGenerated"
+                  title="Generar contraseña segura (8)"
+                >
+                  Generar
+                </button>
+                <button
+                  class="btn btn-outline-primary flex-fill"
+                  type="button"
+                  @click="checkPassword"
+                  title="Comprobar que cumple requisitos"
+                >
+                  Comprobar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -533,7 +642,7 @@ const goToLogin = () => {
           <div class="modal-body text-center">
             <div v-if="registeredUser.foto" class="mb-3">
               <img
-                :src="registeredUser.foto"
+                :src="resolveFotoUrl(registeredUser.foto)"
                 alt="Foto de usuario"
                 class="rounded-circle border"
                 width="100"

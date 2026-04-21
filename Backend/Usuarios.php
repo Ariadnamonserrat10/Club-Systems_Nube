@@ -1,15 +1,18 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+  http_response_code(200);
+  exit();
 }
 
-require_once __DIR__ . '/db.php';
+require_once "cors.php";
+header("Content-Type: application/json; charset=utf-8");
+
+include __DIR__ . "/db.php";
+require_once __DIR__ . "/validation.php";
 
 if (!isset($conexion) || !($conexion instanceof mysqli)) {
   if (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
@@ -65,8 +68,8 @@ try {
     $payload = json_decode(file_get_contents('php://input'), true);
     if (!is_array($payload)) $payload = [];
 
-    // Obtener actual para validar duplicados y defaults
-    $stmtCur = $conexion->prepare('SELECT id, usuario, numeroControl FROM usuarios WHERE id = ?');
+    // Obtener actual para validar por tipo efectivo (payload o valor actual).
+    $stmtCur = $conexion->prepare('SELECT id, usuario, numeroControl, tipo FROM usuarios WHERE id = ?');
     $stmtCur->bind_param('i', $id);
     $stmtCur->execute();
     $resCur = $stmtCur->get_result();
@@ -74,6 +77,84 @@ try {
     if (!$cur) {
       http_response_code(404);
       echo json_encode(['status' => 'error', 'message' => 'Usuario no encontrado']);
+      exit;
+    }
+
+    $errors = [];
+
+    if (array_key_exists('nombre', $payload)) {
+      $payload['nombre'] = to_title_case((string)$payload['nombre']);
+      if ($payload['nombre'] === '' || !is_text_only($payload['nombre']) || !starts_with_uppercase_letter($payload['nombre'])) {
+        $errors[] = 'nombre solo debe contener letras y espacios, e iniciar con mayúscula';
+      }
+    }
+
+    if (array_key_exists('apellidoP', $payload)) {
+      $payload['apellidoP'] = to_title_case((string)$payload['apellidoP']);
+      if ($payload['apellidoP'] === '' || !is_text_only($payload['apellidoP']) || !starts_with_uppercase_letter($payload['apellidoP'])) {
+        $errors[] = 'apellidoP solo debe contener letras y espacios, e iniciar con mayúscula';
+      }
+    }
+
+    if (array_key_exists('apellidoM', $payload)) {
+      $payload['apellidoM'] = to_title_case((string)$payload['apellidoM']);
+      if ($payload['apellidoM'] === '' || !is_text_only($payload['apellidoM']) || !starts_with_uppercase_letter($payload['apellidoM'])) {
+        $errors[] = 'apellidoM solo debe contener letras y espacios, e iniciar con mayúscula';
+      }
+    }
+
+    if (array_key_exists('numeroControl', $payload) && $payload['numeroControl'] !== null && $payload['numeroControl'] !== '') {
+      $payload['numeroControl'] = trim((string)$payload['numeroControl']);
+      if (!is_digits_only($payload['numeroControl'], 8, 8, false)) {
+        $errors[] = 'numeroControl debe tener exactamente 8 dígitos';
+      }
+    }
+
+    if (array_key_exists('telefono', $payload) && $payload['telefono'] !== null && $payload['telefono'] !== '') {
+      $payload['telefono'] = trim((string)$payload['telefono']);
+      if (!is_digits_only($payload['telefono'], 7, 15, false)) {
+        $errors[] = 'telefono debe contener solo números (7-15 dígitos)';
+      }
+    }
+
+    if (array_key_exists('tipo', $payload)) {
+      $payload['tipo'] = strtoupper(trim((string)$payload['tipo']));
+      if (!in_array($payload['tipo'], ['OFICINA', 'MONITOR'], true)) {
+        $errors[] = 'tipo inválido, solo OFICINA o MONITOR';
+      }
+    }
+
+    if (array_key_exists('usuario', $payload)) {
+      $payload['usuario'] = trim((string)$payload['usuario']);
+      if (!is_username_alnum_combo_exact8($payload['usuario'], false)) {
+        $errors[] = 'usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres';
+      }
+    }
+
+    $effectiveTipo = array_key_exists('tipo', $payload) ? $payload['tipo'] : strtoupper((string)($cur['tipo'] ?? ''));
+    if ($effectiveTipo === 'MONITOR') {
+      $numeroControlValue = array_key_exists('numeroControl', $payload) ? $payload['numeroControl'] : ($cur['numeroControl'] ?? '');
+      $telefonoValue = array_key_exists('telefono', $payload) ? $payload['telefono'] : '';
+
+      if (!is_digits_only((string)$numeroControlValue, 8, 8, false)) {
+        $errors[] = 'Para MONITOR, numeroControl es obligatorio y debe tener exactamente 8 dígitos';
+      }
+      if (!is_digits_only((string)$telefonoValue, 7, 15, false)) {
+        $errors[] = 'Para MONITOR, telefono es obligatorio y debe contener solo números (7-15 dígitos)';
+      }
+    }
+
+    foreach (['carrera_id', 'semestre_id', 'club_asignado'] as $numericField) {
+      if (array_key_exists($numericField, $payload) && $payload[$numericField] !== null && $payload[$numericField] !== '') {
+        if (filter_var($payload[$numericField], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+          $errors[] = $numericField . ' debe ser numérico';
+        }
+      }
+    }
+
+    if (!empty($errors)) {
+      http_response_code(422);
+      echo json_encode(['status' => 'error', 'message' => 'Validación', 'details' => $errors]);
       exit;
     }
 
@@ -111,6 +192,11 @@ try {
 
     // Cambio de contraseña si viene "password"
     if (!empty($payload['password'])) {
+      if (!is_password_strong_exact8((string)$payload['password'], false)) {
+        http_response_code(422);
+        echo json_encode(['status' => 'error', 'message' => 'Validación', 'details' => ['password debe tener exactamente 8 caracteres e incluir mayúscula, minúscula, número y carácter especial']]);
+        exit;
+      }
       $pwdHash = password_hash((string)$payload['password'], PASSWORD_BCRYPT);
       $fields[] = 'password = ?';
       $types .= 's';
@@ -192,3 +278,4 @@ try {
   http_response_code(500);
   echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
+

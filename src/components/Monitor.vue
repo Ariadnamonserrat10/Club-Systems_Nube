@@ -3,7 +3,7 @@
     <!-- PERFIL DEL MONITOR -->
     <div class="card shadow-sm p-3 mb-3 bg-white d-flex flex-row align-items-center">
       <img
-        :src="usuarioActual.foto || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
+        :src="resolveFotoUrl(usuarioActual.foto) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
         alt="Foto del monitor"
         class="rounded-circle me-3"
         width="80"
@@ -41,7 +41,6 @@
     <!-- CONTENEDOR DE ASISTENCIAS -->
     <div class="card shadow-sm p-3 flex-grow-1 overflow-auto" style="max-height: 70vh;">
       <h5 class="text-secondary mb-3">Asistencias del Club</h5>
-
       <!-- AGREGAR NUEVA FECHA -->
       <div class="mb-3">
         <label for="nuevaFecha" class="form-label">Agregar nueva fecha:</label>
@@ -104,7 +103,7 @@
 
 <script>
 import axios from "axios";
-import { getAsistenciasPorClub, crearFechaAsistencias, actualizarAsistencia, getAlumnos } from "../services/api";
+import { getAsistenciasPorClub, crearFechaAsistencias, actualizarAsistencia, getClubs } from "../services/api";
 import { BACKEND } from "../services/backend";
 
 export default {
@@ -132,6 +131,9 @@ export default {
     };
   },
   computed: {
+    clubs() {
+      return this.clubsList;
+    },
     alumnosClub() {
       // Ya vienen filtrados por club desde backend; asegurar asistencias y faltas
       return (this.alumnosData || []).map((a) => {
@@ -151,29 +153,59 @@ export default {
     },
   },
   methods: {
+    syncClubNombre() {
+      const clubId = Number(this.usuarioActual.club_asignado);
+      if (!clubId) {
+        this.usuarioActual.club_nombre = null;
+        return;
+      }
+      const club = (this.clubsList || []).find(c => Number(c.id) === clubId);
+      this.usuarioActual.club_nombre = club?.nombre || this.usuarioActual.club_nombre || `Club ID ${clubId}`;
+    },
+    resolveFotoUrl(foto) {
+      if (!foto || typeof foto !== "string") return "";
+      if (foto.startsWith("blob:")) return "";
+      if (/^https?:\/\//i.test(foto)) return foto;
+      const path = foto.startsWith("/") ? foto.slice(1) : foto;
+      return `${BACKEND}/${path}`;
+    },
     async cargarUsuarioActual() {
       try {
         const usuarioId = sessionStorage.getItem("usuarioId");
-        if (!usuarioId) return;
+        if (!usuarioId) {
+          sessionStorage.clear();
+          this.$router.push("/");
+          return;
+        }
 
-        const response = await axios.get(
-          `${BACKEND}/obtenerUsuario.php?id=${usuarioId}`
-        );
+        const response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
 
-        if (response.data?.status === "success") {
+        if (response.data?.status === "success" && response.data.data) {
           const datos = response.data.data;
           this.usuarioActual.nombre = datos.nombre || "";
           this.usuarioActual.apellidoP = datos.apellidoP || "";
           this.usuarioActual.tipo = datos.tipo || sessionStorage.getItem("usuarioTipo") || "";
-          this.usuarioActual.foto = datos.foto || this.usuarioActual.foto;
+          this.usuarioActual.foto = this.resolveFotoUrl(datos.foto) || this.usuarioActual.foto;
           this.usuarioActual.club_asignado = datos.club_asignado ?? null;
           this.usuarioActual.club_nombre = datos.club_nombre ?? null;
           this.selectedClubId = this.usuarioActual.club_asignado;
+          this.syncClubNombre();
 
           // Si la BD devuelve el club asignado al monitor, opcionalmente actualizarlo
           if (datos.club_nombre) this.monitor.club = datos.club_nombre;
+        } else {
+          console.warn("Usuario no encontrado o respuesta inválida, cerrando sesión.");
+          sessionStorage.clear();
+          this.$router.push("/");
+          return;
         }
       } catch (error) {
+        if (error?.response?.status === 404) {
+          console.warn("usuarioId no existe en backend. Se limpia sesión.");
+          sessionStorage.clear();
+          this.$router.push("/");
+          return;
+        }
         console.error("Error cargando usuario Monitor:", error);
       }
     },
@@ -247,12 +279,9 @@ export default {
 
     async cargarClubs() {
       try {
-        const res = await axios.get(`${BACKEND}/getClubs.php`);
-        if (res.data?.status === "success" && Array.isArray(res.data.data)) {
-          this.clubsList = res.data.data;
-        } else {
-          console.warn("No se obtuvieron clubs:", res.data);
-        }
+        const clubs = await getClubs();
+        this.clubsList = Array.isArray(clubs) ? clubs : [];
+        this.syncClubNombre();
       } catch (err) {
         console.error("Error cargando lista de clubs:", err);
       }
@@ -396,6 +425,7 @@ export default {
   },
   async mounted() {
     await this.cargarUsuarioActual();
+    await this.cargarClubs();
     await this.loadAsistencias();
   },
 };

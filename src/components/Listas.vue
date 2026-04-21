@@ -68,88 +68,45 @@
     <div v-if="previewData" class="print-preview">
       <div class="preview-documento">
         <div class="constancia A4" id="constancia">
-          <!-- ENCABEZADO CON TABLA Y LOGO -->
+          <!-- ENCABEZADO EN TEXTO (evita depender de imagen con celdas vacías) -->
           <table
             class="tabla-encabezado"
             cellpadding="8"
             cellspacing="0"
-            style="
-              width: 100%;
-              border-collapse: collapse;
-              font-family: Arial, sans-serif;
-              font-size: 9pt;
-            "
+            style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9pt"
           >
             <tr>
-              <!-- Logo -->
-              <td
-                rowspan="2"
-                style="
-                  border: 1px solid;
-                  width: 90px;
-                  text-align: center;
-                  vertical-align: middle;
-                "
-              >
-                <img
-                  src="../Img/Logo.jpg"
-                  alt="Logo"
-                  style="max-width: 70px; height: auto"
-                />
+              <td rowspan="2" style="border: 1px solid #000; width: 95px; text-align: center; vertical-align: middle;">
+                <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 75px; height: auto" />
               </td>
-
-              <!-- Título -->
-              <td style="border: 1px solid #000; vertical-align: middle">
-                Constancia de cumplimiento de actividad Cultural y/o Deportiva
+              <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 11pt; line-height: 1.1;">
+                Formato&nbsp;&nbsp;&nbsp; para&nbsp;&nbsp;&nbsp; el&nbsp;&nbsp;&nbsp; Registro&nbsp;&nbsp;&nbsp; de&nbsp;&nbsp;&nbsp; Participantes&nbsp;&nbsp;&nbsp; de<br>
+                Actividades Culturales y/o Deportivas
               </td>
-
-              <!-- Codigo / Revision / Pagina -->
-              <td
-                rowspan="2"
-                style="
-                  border: 1px solid #000;
-                  width: 32%;
-                  vertical-align: top;
-                  padding: 0;
-                "
-              >
-                <table
-                  style="width: 100%; border-collapse: collapse; font-size: 8pt"
-                >
+              <td rowspan="2" style="border: 1px solid #000; width: 32%; vertical-align: top; padding: 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
                   <tr>
-                    <td
-                      style="
-                        border-bottom: 1px solid black;
-                        padding: 6px;
-                        white-space: nowrap;
-                      "
-                    >
-                      <strong>Codigo:TecNM-VI-PO-003-05</strong>
-                    </td>
+                    <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Código:TecNM-VI-PO-003-01</strong></td>
                   </tr>
                   <tr>
-                    <td style="border-bottom: 1px solid black; padding: 6px">
-                      Revision: 0
-                    </td>
+                    <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Revisión: 0</strong></td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px">Pagina 1 de 1</td>
+                    <td style="padding: 6px;"><strong>Página 1 de 1</strong></td>
                   </tr>
                 </table>
               </td>
             </tr>
-
             <tr>
-              <!-- Norma -->
-              <td style="border: 1px solid; vertical-align: middle">
-                Referencia a la Norma ISO 9001:2015&nbsp;&nbsp;&nbsp;8.1
+              <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 10pt;">
+                Referencia a la Norma ISO 9001:2015: 8.1,&nbsp; 8.2.1,&nbsp; 8.2.2
               </td>
             </tr>
           </table>
 
           <h2
             class="titulo-constancia"
-            style="font-size: 11pt; margin: 60px 0 15px 0"
+            style="font-size: 11pt; margin: 90px 0 15px 0"
           >
             CONSTANCIA DE CUMPLIMIENTO DE ACTIVIDAD CULTURAL Y/O DEPORTIVA
           </h2>
@@ -161,15 +118,15 @@
               class="destinatario"
               style="font-size: 10pt; margin: 0 0 20px 0; line-height: 1.6"
             >
-              C. BLANCA ANSELMA CASTRO CASTRO<br />
-              JEFA DEL DEPARTAMENTO DE SERVICIOS ESCOLARES<br />
+              {{ getNombreJefe('jefa_servicios') || 'C. __________________________' }}<br />
+              {{ tituloServiciosEscolares() }} DEL DEPARTAMENTO DE SERVICIOS ESCOLARES<br />
               PRESENTE
             </p>
 
             <div class="espacios"></div>
 
             <p class="texto justificado">
-              La que suscribe Olimpia Cruz Reyes, Jefa del Departamento de
+              La que suscribe {{ getNombreJefe('jefe_actividades') || '__________________________' }}, {{ tituloFirma('jefe_actividades') }} del Departamento de
               Actividades Extraescolares, por este medio se permite hacer de su
               conocimiento que la estudiante
               <strong>{{ toUpper(previewData.estudianteNombre) }}</strong> con
@@ -182,7 +139,7 @@
               un valor numérico de
               <strong>{{ desempenoValor(previewData.desempeno) }}</strong>
               durante el periodo escolar
-              <strong>{{ toUpper(previewData.periodo) }}</strong
+              <strong>{{ toUpper(previewData.mesInicio) }}-{{ toUpper(previewData.mesFin) }} {{ previewData.anioPeriodo }}</strong
               >, con un valor curricular de 1 crédito.
             </p>
 
@@ -238,9 +195,9 @@
                   "
                 >
                   <div class="linea-firma"></div>
-                  <div class="nombre-firma">FERNANDO JAIR MENDOZA JIMENEZ</div>
+                  <div class="nombre-firma">{{ getNombreJefe('jefe_promocion') || '__________________________' }}</div>
                   <div class="cargo-firma">
-                    JEFE DE LA OFICINA DE PROMOCIÓN DEPORTIVA
+                    {{ tituloFirma('jefe_promocion') }} DE LA OFICINA DE PROMOCIÓN {{ toUpper(previewData.tipoActividad || 'CULTURAL') }}
                   </div>
                 </td>
                 <td
@@ -253,9 +210,9 @@
                   "
                 >
                   <div class="linea-firma"></div>
-                  <div class="nombre-firma">OLIMPIA CRUZ REYES</div>
+                  <div class="nombre-firma">{{ getNombreJefe('jefe_actividades') || '__________________________' }}</div>
                   <div class="cargo-firma">
-                    JEFA DEL DEPTO. DE ACTIVIDADES EXTRAESCOLARES
+                    {{ tituloFirma('jefe_actividades') }} DEL DEPARTAMENTO DE ACTIVIDADES EXTRAESCOLARES
                   </div>
                 </td>
               </tr>
@@ -276,37 +233,89 @@
       </div>
 
       <div class="acciones-preview">
+        <h5 class="mb-3">Configuración de Firmas</h5>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Jefa de Servicios Escolares</label>
+          <input
+            v-model="jefesSeleccionados.jefa_servicios_nombre"
+            class="form-control form-control-sm"
+            placeholder="Nombre de la jefa"
+            maxlength="60"
+            @input="sanitizeNombreInput('jefa_servicios_nombre')"
+            @change="guardarPreferenciaManual('jefa_servicios')"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Jefe/Jefa de Actividades</label>
+          <input
+            v-model="jefesSeleccionados.jefe_actividades_nombre"
+            class="form-control form-control-sm"
+            placeholder="Nombre completo"
+            maxlength="60"
+            @input="sanitizeNombreInput('jefe_actividades_nombre')"
+            @change="guardarPreferenciaManual('jefe_actividades')"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Jefe/Jefa de Promoción</label>
+          <input
+            v-model="jefesSeleccionados.jefe_promocion_nombre"
+            class="form-control form-control-sm"
+            placeholder="Nombre completo"
+            maxlength="60"
+            @input="sanitizeNombreInput('jefe_promocion_nombre')"
+            @change="guardarPreferenciaManual('jefe_promocion')"
+          />
+        </div>
+
+        <hr>
+
         <h5 class="mb-3">Editar Constancia</h5>
         <div class="campos-editar">
           <div class="campo">
             <label>Período:</label>
-            <input
-              v-model="previewData.periodo"
-              type="text"
-              class="form-control form-control-sm"
-            />
-          </div>
-          <div class="campo">
-            <label>Desempeño:</label>
-            <select
-              v-model="previewData.desempeno"
-              class="form-select form-select-sm"
-            >
-              <option value="EXCELENTE">EXCELENTE</option>
-              <option value="BUENO">BUENO</option>
-              <option value="REGULAR">REGULAR</option>
-              <option value="INSUFICIENTE">INSUFICIENTE</option>
-            </select>
-          </div>
-          <div class="campo">
-            <label>Tipo de club:</label>
-            <select
-              v-model="previewData.tipoActividad"
-              class="form-select form-select-sm"
-            >
-              <option value="CULTURAL">CULTURAL</option>
-              <option value="DEPORTIVA">DEPORTIVA</option>
-            </select>
+            <div class="d-flex gap-2">
+              <select v-model="previewData.mesInicio" class="form-select form-select-sm">
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril">Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+                <option value="Julio">Julio</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+              </select>
+              <span class="align-self-center">-</span>
+              <select v-model="previewData.mesFin" class="form-select form-select-sm">
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril">Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+                <option value="Julio">Julio</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+              </select>
+              <input
+                v-model="previewData.anioPeriodo"
+                type="number"
+                min="2020"
+                max="2030"
+                class="form-control form-control-sm"
+                style="width: 100px"
+              />
+            </div>
           </div>
         </div>
         <div class="botones-acciones">
@@ -326,10 +335,10 @@
 </template>
 
 <script>
-import { getAsistenciasPorClub } from "../services/api";
+import { getAsistenciasPorClub, getFirmas, saveConfig } from "../services/api";
 export default {
   name: "Listas",
-  props: ["clubs", "alumnos", "fechas"],
+  props: ["clubs", "alumnos", "fechas", "usuarios"],
   data() {
     return {
       clubSeleccionado: "",
@@ -337,6 +346,13 @@ export default {
       periodoActual: this.getPeriodoActual(),
       alumnosData: [],
       fechasData: [],
+      jefesSeleccionados: {
+        jefe_promocion: "",
+        jefe_promocion_nombre: "ARIADNA MONSERRAT LOPEZ",
+        jefe_actividades: "",
+        jefe_actividades_nombre: "URIEL ARCADIO AVILA",
+        jefa_servicios_nombre: "",
+      },
     };
   },
   computed: {
@@ -388,6 +404,10 @@ export default {
         mes: meses[ahora.getMonth()],
         anio: ahora.getFullYear(),
       };
+    },
+    usuariosOficina() {
+      if (!Array.isArray(this.usuarios)) return [];
+      return this.usuarios.filter(u => (u.tipo || "").toString().toUpperCase() === "OFICINA");
     },
   },
   methods: {
@@ -470,8 +490,8 @@ export default {
       const mes = f.getMonth();
       const anio = f.getFullYear();
       return mes >= 0 && mes <= 5
-        ? `Enero-Junio ${anio}`
-        : `Agosto-Diciembre ${anio}`;
+        ? { mesInicio: "Enero", mesFin: "Junio", anioPeriodo: anio }
+        : { mesInicio: "Agosto", mesFin: "Diciembre", anioPeriodo: anio };
     },
     isCulturalName(nombre) {
       const n = (nombre || "").toString().trim().toLowerCase();
@@ -488,6 +508,7 @@ export default {
     },
     imprimirConstancia(alumno) {
       const club = alumno.club || this.clubSeleccionado || "";
+      const periodo = this.getPeriodoActual();
       const data = {
         estudianteNombre:
           `${alumno.nombre || ""} ${alumno.apellidoP || ""} ${alumno.apellidoM || ""}`.trim(),
@@ -502,7 +523,9 @@ export default {
               ? "BUENO"
               : "REGULAR")
         ).toString(),
-        periodo: alumno.periodo || this.periodoActual,
+        mesInicio: periodo.mesInicio,
+        mesFin: periodo.mesFin,
+        anioPeriodo: periodo.anioPeriodo,
         tipoActividad: this.tipoActividad(club),
       };
       this.previewData = { ...data };
@@ -539,6 +562,113 @@ export default {
     descargarTodas() {
       console.warn('Descargar todas (PDF) no implementado');
     },
+    formatNombre(u) {
+      if (!u) return "";
+      return `${u.nombre || ""} ${u.apellidoP || ""} ${u.apellidoM || ""}`.trim().toUpperCase();
+    },
+    sanitizeNombreInput(campo) {
+      const raw = (this.jefesSeleccionados[campo] || "").toString();
+      const base = raw
+        .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trimStart()
+        .toUpperCase();
+
+      let letras = 0;
+      let out = "";
+      for (const ch of base) {
+        if (/[A-ZÁÉÍÓÚÜÑ]/u.test(ch)) {
+          if (letras >= 50) continue;
+          letras += 1;
+          out += ch;
+        } else if (ch === " ") {
+          if (out && out[out.length - 1] !== " ") out += ch;
+        }
+      }
+
+      this.jefesSeleccionados[campo] = out;
+    },
+    inferGenero(nombre) {
+      const first = (nombre || "").trim().split(/\s+/)[0] || "";
+      if (!first) return "M";
+      return first.endsWith("A") ? "F" : "M";
+    },
+    tituloFirma(cargo) {
+      const nombre = this.getNombreJefe(cargo).replace(/^C\.\s*/i, "");
+      if (!nombre) {
+        return cargo === "jefa_servicios" ? "JEFA" : "JEFE";
+      }
+      return this.inferGenero(nombre) === "F" ? "JEFA" : "JEFE";
+    },
+    tituloServiciosEscolares() {
+      const raw = (this.jefesSeleccionados.jefa_servicios_nombre || "").toUpperCase().trim();
+      if (/^ENCARGAD[OA]\b/.test(raw)) return "ENCARGADO";
+      if (/^JEFA\b/.test(raw)) return "JEFA";
+      if (/^JEFE\b/.test(raw)) return "JEFE";
+      const nombre = this.getNombreJefe("jefa_servicios").replace(/^C\.\s*/i, "");
+      return this.inferGenero(nombre) === "F" ? "JEFA" : "JEFE";
+    },
+    async guardarPreferenciaManual(cargo) {
+      this.sanitizeNombreInput(cargo + "_nombre");
+      const valor = String(this.jefesSeleccionados[cargo + "_nombre"] || "")
+        .replace(/\s+/g, " ")
+        .trim();
+      this.jefesSeleccionados[cargo + "_nombre"] = valor;
+      try {
+        await saveConfig("firma_" + cargo, valor);
+      } catch (e) {
+        console.error("Error guardando firma manual:", e);
+      }
+    },
+    async loadCargos() {
+      try {
+        const firmas = await getFirmas();
+        if (firmas.jefe_actividades) {
+          this.jefesSeleccionados.jefe_actividades = firmas.jefe_actividades.id || "";
+          if (firmas.jefe_actividades.nombre) {
+            this.jefesSeleccionados.jefe_actividades_nombre = String(firmas.jefe_actividades.nombre).toUpperCase();
+            this.sanitizeNombreInput("jefe_actividades_nombre");
+          }
+        }
+        if (firmas.jefe_promocion) {
+          this.jefesSeleccionados.jefe_promocion = firmas.jefe_promocion.id || "";
+          if (firmas.jefe_promocion.nombre) {
+            this.jefesSeleccionados.jefe_promocion_nombre = String(firmas.jefe_promocion.nombre).toUpperCase();
+            this.sanitizeNombreInput("jefe_promocion_nombre");
+          }
+        }
+        if (firmas.jefa_servicios) {
+          this.jefesSeleccionados.jefa_servicios_nombre = firmas.jefa_servicios.nombre;
+          this.sanitizeNombreInput("jefa_servicios_nombre");
+        }
+      } catch (e) {
+        console.error("Error cargando firmas:", e);
+      }
+    },
+    getNombreJefe(cargo) {
+      if (cargo === "jefa_servicios") {
+        const raw = String(this.jefesSeleccionados.jefa_servicios_nombre || "").toUpperCase();
+        const limpio = raw.replace(/^(JEFA|JEFE|ENCARGAD[OA])\s+/i, "").trim();
+        return limpio ? "C. " + limpio : "";
+      }
+
+      const manualKey = cargo + "_nombre";
+      const manual = (this.jefesSeleccionados[manualKey] || "").toString().trim();
+      if (manual) return manual.toUpperCase();
+
+      const id = this.jefesSeleccionados[cargo];
+      if (!id) {
+        if (cargo === "jefe_promocion") return "ARIADNA MONSERRAT LOPEZ";
+        if (cargo === "jefe_actividades") return "URIEL ARCADIO AVILA";
+        return "";
+      }
+      const u = this.usuariosOficina.find(user => user.id == id);
+      const fromUser = u ? this.formatNombre(u) : "";
+      if (fromUser && fromUser !== "ADMIN") return fromUser;
+      if (cargo === "jefe_promocion") return "ARIADNA MONSERRAT LOPEZ";
+      if (cargo === "jefe_actividades") return "URIEL ARCADIO AVILA";
+      return fromUser;
+    },
     printStyles() {
       return `
         @page { size: A4; margin: 20mm; }
@@ -568,6 +698,7 @@ export default {
     },
   },
   mounted() {
+    this.loadCargos();
     // si ya hay un club seleccionado inicial, cargar
     if (this.clubSeleccionado) this.loadAsistencias();
   },
@@ -628,6 +759,18 @@ export default {
 .tabla-encabezado td {
   border: 1px solid #000;
   padding: 8px;
+}
+
+/* Evita texto invisible por herencia de estilos globales */
+.tabla-encabezado,
+.tabla-encabezado td,
+.tabla-encabezado strong,
+.tabla-pie,
+.tabla-pie td,
+.cuerpo,
+.cuerpo p,
+.cuerpo strong {
+  color: #000 !important;
 }
 
 .celda-logo {

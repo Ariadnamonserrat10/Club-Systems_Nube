@@ -1,7 +1,8 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
+require_once "cors.php";
+header("Content-Type: application/json; charset=utf-8");
 
-require_once __DIR__ . '/db.php';
+include __DIR__ . "/db.php";
 
 if (!isset($conexion) || !($conexion instanceof mysqli)) {
   if (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
@@ -38,3 +39,4 @@ try {
   echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
+

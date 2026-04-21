@@ -1,14 +1,8 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, OPTIONS");
+require_once "cors.php";
 header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
-}
 
 $usuarioId = $_GET['id'] ?? null;
 

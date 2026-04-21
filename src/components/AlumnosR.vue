@@ -45,9 +45,9 @@
         </div>
         <div class="modal-body">
           <div class="grid">
-            <input v-model="form.nombre" class="input" placeholder="Nombre(s)" />
-            <input v-model="form.apellidoP" class="input" placeholder="Apellido paterno" />
-            <input v-model="form.apellidoM" class="input" placeholder="Apellido materno" />
+            <input v-model="form.nombre" class="input" placeholder="Nombre(s)" @input="soloTexto('nombre')" />
+            <input v-model="form.apellidoP" class="input" placeholder="Apellido paterno" @input="soloTexto('apellidoP')" />
+            <input v-model="form.apellidoM" class="input" placeholder="Apellido materno" @input="soloTexto('apellidoM')" />
 
             <select v-model="form.carrera" class="input">
               <option disabled value="">Selecciona carrera</option>
@@ -59,7 +59,7 @@
               <option v-for="n in 7" :key="n">{{ n }}</option>
             </select>
 
-            <input v-model="form.control" maxlength="8" class="input" placeholder="Número de control (8 dígitos)" />
+            <input v-model="form.control" maxlength="8" class="input" placeholder="Número de control (8 dígitos)" @input="soloNumeros('control')" />
             <input v-model="form.telefono" class="input" placeholder="Teléfono" @input="soloNumeros('telefono')" />
 
             <select v-model="form.clubId" class="input">
@@ -84,9 +84,9 @@
         </div>
         <div class="modal-body">
           <div class="grid">
-            <input v-model="editForm.nombre" class="input" placeholder="Nombre(s)" />
-            <input v-model="editForm.apellidoP" class="input" placeholder="Apellido paterno" />
-            <input v-model="editForm.apellidoM" class="input" placeholder="Apellido materno" />
+            <input v-model="editForm.nombre" class="input" placeholder="Nombre(s)" @input="soloTextoEdit('nombre')" />
+            <input v-model="editForm.apellidoP" class="input" placeholder="Apellido paterno" @input="soloTextoEdit('apellidoP')" />
+            <input v-model="editForm.apellidoM" class="input" placeholder="Apellido materno" @input="soloTextoEdit('apellidoM')" />
 
             <select v-model="editForm.carrera" class="input">
               <option disabled value="">Selecciona carrera</option>
@@ -98,7 +98,7 @@
               <option v-for="n in 7" :key="n">{{ n }}</option>
             </select>
 
-            <input v-model="editForm.control" maxlength="8" class="input" placeholder="Número de control (8 dígitos)" />
+            <input v-model="editForm.control" maxlength="8" class="input" placeholder="Número de control (8 dígitos)" @input="soloNumerosEdit('control')" />
             <input v-model="editForm.telefono" class="input" placeholder="Teléfono" @input="soloNumerosEdit('telefono')" />
 
             <select v-model="editForm.clubId" class="input">
@@ -167,9 +167,26 @@ export default {
     };
   },
   methods: {
+    normalizarTexto(valor) {
+      const limpio = (valor || '')
+        .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trimStart();
+      return limpio
+        .split(' ')
+        .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+        .join(' ')
+        .trimEnd();
+    },
     openAddModal() {
       this.form = { nombre: '', apellidoP: '', apellidoM: '', carrera: '', semestre: '', control: '', telefono: '', club: '', clubId: '' };
       this.showAddModal = true;
+    },
+    soloTexto(campo) {
+      this.form[campo] = this.normalizarTexto(this.form[campo]);
+    },
+    soloTextoEdit(campo) {
+      this.editForm[campo] = this.normalizarTexto(this.editForm[campo]);
     },
     soloNumeros(campo) {
       this.form[campo] = (this.form[campo] || '').replace(/\D/g, '');
@@ -322,11 +339,31 @@ export default {
 .toast-local { position: fixed; right: 12px; bottom: 12px; padding: 10px 14px; border-radius: 6px; color: #fff; z-index: 2100; }
 .toast-local.success { background: #43a047; }
 .toast-local.error { background: #e53935; }
-.actions { display: inline-flex; gap: 8px; align-items: center; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.actions .btn {
+  min-width: 88px;
+  white-space: nowrap;
+  text-align: center;
+}
 .col-carrera { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .col-sem { width: 80px; text-align: center; }
 .col-control { width: 130px; }
 .col-tel { width: 140px; }
 .col-club { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.col-acciones { width: 160px; }
+.col-acciones { width: 210px; }
+
+@media (max-width: 1200px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions .btn {
+    width: 100%;
+  }
+}
 </style>
