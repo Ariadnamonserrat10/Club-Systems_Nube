@@ -56,10 +56,10 @@
           </div>
           <div class="modal-body">
             <div class="row g-2">
-              <div class="col-md-4"><input v-model="form.nombre" class="form-control" placeholder="Nombre(s)" /></div>
-              <div class="col-md-4"><input v-model="form.apellidoP" class="form-control" placeholder="Apellido paterno" /></div>
-              <div class="col-md-4"><input v-model="form.apellidoM" class="form-control" placeholder="Apellido materno" /></div>
-              <div class="col-md-4 mt-2"><input v-model="form.control" maxlength="8" class="form-control" placeholder="Número de control (8 dígitos)" /></div>
+              <div class="col-md-4"><input v-model="form.nombre" class="form-control" placeholder="Nombre(s)" @input="soloTexto('nombre')" /></div>
+              <div class="col-md-4"><input v-model="form.apellidoP" class="form-control" placeholder="Apellido paterno" @input="soloTexto('apellidoP')" /></div>
+              <div class="col-md-4"><input v-model="form.apellidoM" class="form-control" placeholder="Apellido materno" @input="soloTexto('apellidoM')" /></div>
+              <div class="col-md-4 mt-2"><input v-model="form.control" maxlength="8" class="form-control" placeholder="Número de control (8 dígitos)" @input="soloNumeros('control')" /></div>
               <div class="col-md-4 mt-2"><input v-model="form.telefono" class="form-control" placeholder="Teléfono" @input="soloNumeros('telefono')" /></div>
               <div class="col-md-4 mt-2">
                 <select v-model="form.carrera" class="form-select">
@@ -124,6 +124,17 @@ export default {
     };
   },
   methods: {
+    normalizarTexto(valor) {
+      const limpio = (valor || '')
+        .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trimStart();
+      return limpio
+        .split(' ')
+        .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+        .join(' ')
+        .trimEnd();
+    },
     // simula import desde Google Forms (ejemplo)
     simularImport() {
       const sample = [
@@ -161,6 +172,9 @@ export default {
 
     soloNumeros(campo) {
       this.form[campo] = this.form[campo].replace(/\D/g, '');
+    },
+    soloTexto(campo) {
+      this.form[campo] = this.normalizarTexto(this.form[campo]);
     },
 
     async assignToClub(index, clubName) {

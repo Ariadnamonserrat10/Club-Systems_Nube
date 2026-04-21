@@ -7,7 +7,7 @@
       <div>
         <div class="text-center mb-4">
           <img
-            :src="usuarioActual.foto"
+            :src="resolveFotoUrl(usuarioActual.foto)"
             alt="Usuario"
             class="rounded-circle mb-2"
             width="80"
@@ -113,6 +113,7 @@
         @set-alumnos="handleSetAlumnos"
         @update-alumno="handleUpdateAlumno"
         @request-reload-alumnos="loadAlumnos"
+        @show-error="showError"
       />
     </div>
 
@@ -146,6 +147,7 @@ import Auditoria from "../components/Auditoria.vue";
 import Listas from "../components/Listas.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
 import axios from "axios";
+import { BACKEND } from "../services/backend";
 
 export default {
   name: "Oficina",
@@ -232,6 +234,13 @@ export default {
     };
   },
   methods: {
+   resolveFotoUrl(foto) {
+     if (!foto || typeof foto !== "string") return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+     if (foto.startsWith("blob:")) return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+     if (/^https?:\/\//i.test(foto)) return foto;
+     const path = foto.startsWith("/") ? foto.slice(1) : foto;
+     return `${BACKEND}/${path}`;
+   },
    async cargarUsuarioActual() {
      try {
        const usuarioId = sessionStorage.getItem("usuarioId");
@@ -243,14 +252,24 @@ export default {
          return;
        }
 
-       const response = await axios.get(
-         `/api/obtenerUsuario.php?id=${usuarioId}`
-       );
+       const response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
 
-       if (response.data.status === "success") {
-         this.usuarioActual = response.data.data;
+       if (response.data.status === "success" && response.data.data) {
+         this.usuarioActual = {
+           ...response.data.data,
+           foto: this.resolveFotoUrl(response.data.data?.foto)
+         };
+       } else {
+         console.warn("Usuario no encontrado o respuesta inválida, cerrando sesión.");
+         this.cerrarSesion();
+         return;
        }
      } catch (error) {
+       if (error?.response?.status === 404) {
+         console.warn("usuarioId no existe en backend. Se limpia sesión.");
+         this.cerrarSesion();
+         return;
+       }
        console.error("Error cargando usuario:", error);
      }
    },
@@ -261,12 +280,14 @@ export default {
     cerrarSesion() {
      sessionStorage.removeItem("usuarioId");
      sessionStorage.removeItem("usuarioNombre");
+     sessionStorage.removeItem("usuarioTipo");
       this.$router.push("/");
     },
 
     async loadClubs() {
       try {
         const rows = await getClubs();
+        console.log("GET CLUBS RESPONSE:", rows);
         // Obtener todos los monitores
         const todosLosMonitores = await getAllMonitoresWithClubs();
         
@@ -286,6 +307,7 @@ export default {
         
         // Asignar monitores a sus clubs
         for (const monitor of todosLosMonitores) {
+          console.log(monitor.imagen);
           const club = this.clubs.find(c => c.id === Number(monitor.club_asignado));
           if (club) {
             club.monitores.push({
@@ -351,15 +373,21 @@ export default {
           id_responsable: club.id_responsable ?? null,
         };
         const saved = await createClub(payload);
+        const savedRow = saved?.data ?? saved;
         const mapped = {
-          id: Number(saved.id),
-          nombre: saved.nombre,
-          descripcion: saved.descripcion,
-          cupo: saved.cupo_limite,
+          id: Number(savedRow.id),
+          nombre: savedRow.nombre,
+          descripcion: savedRow.descripcion,
+          cupo: savedRow.cupo_limite,
           ocupados: 0,
-          id_responsable: saved.id_responsable,
-          creado_en: saved.creado_en,
+          id_responsable: savedRow.id_responsable,
+          creado_en: savedRow.creado_en,
         };
+        if (!mapped.nombre) {
+          await this.loadClubs();
+          this.showToast("Club agregado correctamente");
+          return;
+        }
         this.clubs.unshift(mapped);
         this.logAction(
           actor,
@@ -373,8 +401,9 @@ export default {
       }
     },
 
-    async handleEditClub({ index, club }, actor = "Usuario Oficina") {
+    async handleEditClub({ id, club }, actor = "Usuario Oficina") {
       try {
+        const index = this.clubs.findIndex((c) => Number(c.id) === Number(id));
         const current = this.clubs[index];
         if (!current || !current.id) throw new Error("Club sin id");
         const payload = {
@@ -384,14 +413,15 @@ export default {
           id_responsable: club.id_responsable ?? current.id_responsable,
         };
         const saved = await updateClub(current.id, payload);
+        const savedRow = saved?.data ?? saved;
         const mapped = {
-          id: Number(saved.id),
-          nombre: saved.nombre,
-          descripcion: saved.descripcion,
-          cupo: saved.cupo_limite,
+          id: Number(savedRow.id),
+          nombre: savedRow.nombre,
+          descripcion: savedRow.descripcion,
+          cupo: savedRow.cupo_limite,
           ocupados: current.ocupados || 0,
-          id_responsable: saved.id_responsable,
-          creado_en: saved.creado_en,
+          id_responsable: savedRow.id_responsable,
+          creado_en: savedRow.creado_en,
         };
         this.clubs[index] = mapped;
         this.logAction(
@@ -406,8 +436,9 @@ export default {
       }
     },
 
-    async handleDeleteClub(index, actor = "Usuario Oficina") {
+    async handleDeleteClub(id, actor = "Usuario Oficina") {
       try {
+        const index = this.clubs.findIndex((c) => Number(c.id) === Number(id));
         const current = this.clubs[index];
         if (!current || !current.id) throw new Error("Club sin id");
         await deleteClub(current.id);

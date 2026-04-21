@@ -62,6 +62,8 @@
               v-model="usuario"
               type="text"
               placeholder="Usuario"
+              maxlength="8"
+              @input="sanitizeUsuario"
               required
             />
             <svg
@@ -159,10 +161,28 @@ export default {
         this.successMessage = "";
       }, 5000);
     },
+    sanitizeUsuario() {
+      this.usuario = String(this.usuario || '')
+        .replace(/[^A-Za-z0-9]/g, '')
+        .slice(0, 8);
+    },
+    getUsuarioPolicyResult(usuario) {
+      const val = String(usuario || '');
+      const onlyAlnum = /^[A-Za-z0-9]*$/.test(val);
+      const len8 = val.length === 8;
+      const hasLetterAndDigit = /[A-Za-z]/.test(val) && /\d/.test(val);
+      return { ok: onlyAlnum && len8 && hasLetterAndDigit, onlyAlnum, len8, hasLetterAndDigit };
+    },
     async handleLogin() {
       this.errorMessage = "";
+      this.sanitizeUsuario();
       if (!this.usuario || !this.password) {
         this.showMessage("error", "Por favor, completa todos los campos");
+        return;
+      }
+      const usuarioPolicy = this.getUsuarioPolicyResult(this.usuario);
+      if (!usuarioPolicy.ok) {
+        this.showMessage("error", "El usuario debe tener exactamente 8 caracteres, solo letras y números, y combinar ambos");
         return;
       }
       if (this.password.length !== 8) {

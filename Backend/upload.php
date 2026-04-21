@@ -1,13 +1,8 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once "cors.php";
+header("Content-Type: application/json; charset=utf-8");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
-}
+include __DIR__ . "/db.php";
 
 $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
 if (!is_dir($uploadDir)) {
@@ -55,3 +50,4 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) {
 $relative = 'Backend/uploads/' . $name;
 
 echo json_encode(['status' => 'success', 'file' => $relative, 'filename' => $name]);
+

@@ -1,17 +1,11 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . "/cors.php";
 header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
-}
-
-$data = json_decode(file_get_contents("php://input"), true);
+require_once __DIR__ . "/validation.php";
+$rawBody = file_get_contents("php://input");
+$data = json_decode($rawBody, true);
 
 if (!$data) {
   http_response_code(400);
@@ -26,6 +20,18 @@ $userType = trim($data["userType"] ?? "");
 if ($usuario === '' || $password === '') {
   http_response_code(422);
   echo json_encode(["status" => "error", "message" => "Usuario y contraseña requeridos"]);
+  exit;
+}
+
+if (!is_username_alnum_combo_exact8($usuario, false)) {
+  http_response_code(422);
+  echo json_encode(["status" => "error", "message" => "El usuario debe ser alfanumérico, combinar letras y números, y tener exactamente 8 caracteres"]);
+  exit;
+}
+
+if (!is_password_strong_exact8($password, false)) {
+  http_response_code(422);
+  echo json_encode(["status" => "error", "message" => "La contraseña debe tener exactamente 8 caracteres e incluir mayúscula, minúscula, número y carácter especial"]);
   exit;
 }
 
@@ -96,3 +102,4 @@ echo json_encode([
   "club_nombre" => $user['club_nombre'] ?? null
 ]);
 ?>
+
