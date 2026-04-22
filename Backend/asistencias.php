@@ -56,9 +56,18 @@ try {
       exit;
     }
 
-    // Obtener alumnos del club con datos necesarios para constancias
-    $stmtA = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM, numeroControl, carrera_id, semestre_id, id_club FROM alumnos WHERE id_club = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
-    $stmtA->bind_param('i', $clubId);
+    // Obtener periodo activo
+    $resPeriodo = $conexion->query("SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1");
+    $periodoActivo = $resPeriodo->fetch_assoc();
+    if (!$periodoActivo) {
+      echo json_encode(['status' => 'success', 'data' => ['fechas' => [], 'asistencias' => [], 'alumnos' => []]]);
+      exit;
+    }
+    $periodo_id = $periodoActivo['id'];
+
+    // Obtener alumnos del club con datos necesarios para constancias en el periodo activo
+    $stmtA = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM, numeroControl, carrera_id, semestre_id, id_club FROM alumnos WHERE id_club = ? AND periodo_id = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
+    $stmtA->bind_param('ii', $clubId, $periodo_id);
     $stmtA->execute();
     $resA = $stmtA->get_result();
     $alumnos = [];
@@ -108,6 +117,14 @@ try {
     // POST body: { club_id, fecha: 'YYYY-MM-DD', registros: [{ alumno_id, presente }] }
     $payload = json_decode(file_get_contents('php://input'), true);
     if (!is_array($payload)) $payload = [];
+
+    // Validar periodo activo
+    $resPeriodo = $conexion->query("SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1");
+    if ($resPeriodo->num_rows === 0) {
+      http_response_code(403);
+      echo json_encode(['status' => 'error', 'message' => 'No se pueden registrar asistencias porque el periodo está cerrado.']);
+      exit;
+    }
 
     $clubId = isset($payload['club_id']) ? (int)$payload['club_id'] : 0;
     $fecha = isset($payload['fecha']) ? trim((string)$payload['fecha']) : '';
@@ -175,6 +192,14 @@ try {
     // PUT /asistencias.php  body: { alumno_id, fecha: 'YYYY-MM-DD', presente: bool }
     $payload = json_decode(file_get_contents('php://input'), true);
     if (!is_array($payload)) $payload = [];
+
+    // Validar periodo activo
+    $resPeriodo = $conexion->query("SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1");
+    if ($resPeriodo->num_rows === 0) {
+      http_response_code(403);
+      echo json_encode(['status' => 'error', 'message' => 'No se pueden registrar asistencias porque el periodo está cerrado.']);
+      exit;
+    }
 
     $alumnoId = isset($payload['alumno_id']) ? (int)$payload['alumno_id'] : 0;
     $fecha = isset($payload['fecha']) ? trim((string)$payload['fecha']) : '';
