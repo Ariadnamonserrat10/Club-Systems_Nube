@@ -236,15 +236,14 @@ export default {
         // 2) Cargar asistencias por club
         const data = await getAsistenciasPorClub(clubId);
         console.log('Datos de asistencias:', data);
-        console.log('DEBUG desde backend:', data._debug);
         
-        // fechas en ISO yyyy-mm-dd
-        const nuevasFechas = Array.isArray(data.fechas) ? data.fechas : [];
-        console.log('Nuevas fechas desde BD:', nuevasFechas);
+        // fechas en ISO yyyy-mm-dd desde la BD
+        const fechasBD = Array.isArray(data.fechas) ? data.fechas : [];
+        console.log('Fechas desde BD:', fechasBD);
         
-        // Mantener fechas existentes + agregar nuevas de la BD
-        this.fechasData = [...new Set([...this.fechasData, ...nuevasFechas])].sort();
-        console.log('Fechas actuales después de merge:', this.fechasData);
+        // REEMPLAZAR fechas locales con las de la BD para evitar desincronización
+        this.fechasData = [...fechasBD].sort();
+        console.log('Fechas sincronizadas:', this.fechasData);
 
         // Preferir alumnos del endpoint de asistencias si vienen, si no usar los de alumnos por club
         const alumnos = (Array.isArray(data.alumnos) && data.alumnos.length) ? data.alumnos : alumnosClub;
@@ -252,14 +251,15 @@ export default {
         
         const asist = data.asistencias || {};
 
-        // Mapear estructura de asistencias por alumno y fecha
+        // Mapear estructura de asistencias por alumno y fecha, normalizando 1/0 a true/false
         const alumnosMappeados = (alumnos || []).map((al) => {
-          const map = { ...(asist[al.id] || {}) };
+          const rawMap = asist[al.id] || {};
+          const map = {};
+          // PHP devuelve 1/0; normalizar a true/false
+          Object.keys(rawMap).forEach(f => { map[f] = rawMap[f] == 1; });
           // Asegurar que todas las fechas estén presentes
           this.fechasData.forEach(fecha => {
-            if (!(fecha in map)) {
-              map[fecha] = false;
-            }
+            if (!(fecha in map)) map[fecha] = false;
           });
           return { ...al, asistencias: map, faltas: Object.values(map).filter(v => v === false).length };
         });

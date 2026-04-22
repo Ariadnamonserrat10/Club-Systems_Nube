@@ -107,6 +107,7 @@
         @add-alumno="handleAddAlumno"
         @delete-alumno="handleDeleteAlumno"
         @assign-alumno="handleAssignAlumno"
+        @refresh="refreshClubs"
         @log="handleLog"
         @import-unregistered="handleImportUnregistered"
         @filter-users="handleFilterUsers"
@@ -297,6 +298,7 @@ export default {
         this.clubs = rows.map((r) => ({
           id: Number(r.id),
           nombre: r.nombre,
+          tipo: r.tipo || 'CULTURAL',
           descripcion: r.descripcion,
           cupo: r.cupo_limite,
           ocupados: r.cupo_ocupado != null ? Number(r.cupo_ocupado) : 0,
@@ -324,6 +326,11 @@ export default {
       } catch (e) {
         this.showError(e.message || "No se pudo cargar clubs");
       }
+    },
+
+    // Refresco manual de clubs sin disparar la cadena completa de mounted()
+    async refreshClubs() {
+      await this.loadClubs();
     },
 
     async loadAlumnos() {
@@ -368,6 +375,7 @@ export default {
       try {
         const payload = {
           nombre: club.nombre,
+          tipo: club.tipo || 'CULTURAL',
           descripcion: club.descripcion ?? null,
           cupo_limite: Number(club.cupo) || 0,
           id_responsable: club.id_responsable ?? null,
@@ -377,6 +385,7 @@ export default {
         const mapped = {
           id: Number(savedRow.id),
           nombre: savedRow.nombre,
+          tipo: savedRow.tipo || 'CULTURAL',
           descripcion: savedRow.descripcion,
           cupo: savedRow.cupo_limite,
           ocupados: 0,
@@ -408,6 +417,7 @@ export default {
         if (!current || !current.id) throw new Error("Club sin id");
         const payload = {
           nombre: club.nombre ?? current.nombre,
+          tipo: club.tipo ?? current.tipo,
           descripcion: club.descripcion ?? current.descripcion,
           cupo_limite: club.cupo !== undefined ? Number(club.cupo) : current.cupo,
           id_responsable: club.id_responsable ?? current.id_responsable,
@@ -417,6 +427,7 @@ export default {
         const mapped = {
           id: Number(savedRow.id),
           nombre: savedRow.nombre,
+          tipo: savedRow.tipo || current.tipo || 'CULTURAL',
           descripcion: savedRow.descripcion,
           cupo: savedRow.cupo_limite,
           ocupados: current.ocupados || 0,

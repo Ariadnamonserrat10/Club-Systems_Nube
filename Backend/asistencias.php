@@ -72,26 +72,15 @@ try {
     }
 
     // Obtener asistencias para esos alumnos
-    $placeholders = implode(',', array_fill(0, count($alumnoIds), '?'));
-    $types = str_repeat('i', count($alumnoIds));
-    $stmt = $conexion->prepare("SELECT id_alumno, fecha, presente FROM asistencias WHERE id_alumno IN ($placeholders) ORDER BY fecha ASC");
-    
-    if (!$stmt) {
-      error_log("Error preparando SELECT asistencias: " . $conexion->error);
+    // Usamos los IDs directamente porque ya fueron castados a (int) arriba → seguro contra inyección
+    $idsStr = implode(',', $alumnoIds);
+    $res = $conexion->query("SELECT id_alumno, fecha, presente FROM asistencias WHERE id_alumno IN ($idsStr) ORDER BY fecha ASC");
+
+    if (!$res) {
+      error_log("Error ejecutando SELECT asistencias: " . $conexion->error);
       echo json_encode(['status' => 'success', 'data' => ['fechas' => [], 'asistencias' => [], 'alumnos' => $alumnos]]);
       exit;
     }
-    
-    // Usar call_user_func_array para evitar problemas con spread operator
-    call_user_func_array([$stmt, 'bind_param'], array_merge([$types], $alumnoIds));
-    
-    if (!$stmt->execute()) {
-      error_log("Error ejecutando SELECT asistencias: " . $stmt->error);
-      echo json_encode(['status' => 'success', 'data' => ['fechas' => [], 'asistencias' => [], 'alumnos' => $alumnos]]);
-      exit;
-    }
-    
-    $res = $stmt->get_result();
 
     $fechasSet = [];
     $asistencias = []; // { id_alumno: { 'YYYY-MM-DD': bool } }
@@ -104,17 +93,13 @@ try {
       $asistencias[$aid][$fecha] = $pres;
     }
 
-    // Las fechas ya están en $fechasSet desde la consulta de asistencias
     $fechas = array_keys($fechasSet);
     sort($fechas);
-    
-    error_log("Total de fechas encontradas: " . count($fechas));
-    error_log("Fechas: " . json_encode($fechas));
 
     echo json_encode(['status' => 'success', 'data' => [
-      'fechas' => $fechas,
+      'fechas'      => $fechas,
       'asistencias' => $asistencias,
-      'alumnos' => $alumnos
+      'alumnos'     => $alumnos
     ]]);
     exit;
   }

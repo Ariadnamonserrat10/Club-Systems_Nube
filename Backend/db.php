@@ -28,6 +28,20 @@ if (!$connected) {
 
 $conexion->set_charset('utf8mb4');
 
+// Compatibilidad con PDO (Requerido por Clubs.php y otros)
+try {
+    $dsn = "mysql:host=$host;dbname=$db;port=$port;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]);
+    $GLOBALS['pdo'] = $pdo;
+} catch (PDOException $e) {
+    error_log('PDO connection failed: ' . $e->getMessage());
+    // No matamos el proceso porque mysqli puede seguir funcionando
+}
+
 if (!function_exists('getMysqli')) {
     function getMysqli() {
         global $conexion;

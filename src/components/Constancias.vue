@@ -213,33 +213,37 @@
             cellspacing="0"
             style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9pt"
           >
-            <tr>
-              <td rowspan="2" style="border: 1px solid #000; width: 95px; text-align: center; vertical-align: middle;">
-                <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 75px; height: auto" />
-              </td>
-              <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 11pt; line-height: 1.1;">
-                Formato&nbsp;&nbsp;&nbsp; para&nbsp;&nbsp;&nbsp; el&nbsp;&nbsp;&nbsp; Registro&nbsp;&nbsp;&nbsp; de&nbsp;&nbsp;&nbsp; Participantes&nbsp;&nbsp;&nbsp; de<br>
-                Actividades Culturales y/o Deportivas
-              </td>
-              <td rowspan="2" style="border: 1px solid #000; width: 32%; vertical-align: top; padding: 0;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
-                  <tr>
-                    <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Código:TecNM-VI-PO-003-01</strong></td>
-                  </tr>
-                  <tr>
-                    <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Revisión: 0</strong></td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px;"><strong>Página 1 de 1</strong></td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 10pt;">
-                Referencia a la Norma ISO 9001:2015: 8.1,&nbsp; 8.2.1,&nbsp; 8.2.2
-              </td>
-            </tr>
+            <tbody>
+              <tr>
+                <td rowspan="2" style="border: 1px solid #000; width: 95px; text-align: center; vertical-align: middle;">
+                  <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 75px; height: auto" />
+                </td>
+                <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 11pt; line-height: 1.1;">
+                  Formato&nbsp;&nbsp;&nbsp; para&nbsp;&nbsp;&nbsp; el&nbsp;&nbsp;&nbsp; Registro&nbsp;&nbsp;&nbsp; de&nbsp;&nbsp;&nbsp; Participantes&nbsp;&nbsp;&nbsp; de<br>
+                  Actividades Culturales y/o Deportivas
+                </td>
+                <td rowspan="2" style="border: 1px solid #000; width: 32%; vertical-align: top; padding: 0;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+                    <tbody>
+                      <tr>
+                        <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Código:TecNM-VI-PO-003-01</strong></td>
+                      </tr>
+                      <tr>
+                        <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Revisión: 0</strong></td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px;"><strong>Página 1 de 1</strong></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 10pt;">
+                  Referencia a la Norma ISO 9001:2015: 8.1,&nbsp; 8.2.1,&nbsp; 8.2.2
+                </td>
+              </tr>
+            </tbody>
           </table>
 
           <h2
@@ -286,57 +290,59 @@
             <table
               class="tabla-firmas"
               style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-              <tr style="border: none !important;">
-                <td
-                  style="
-                    width: 50%;
-                    text-align: center;
-                    vertical-align: top;
-                    padding: 0;
-                    border: none !important;">
-                  ATENTAMENTE
-                </td>
-                <td
-                  style="
-                    width: 50%;
-                    text-align: center;
-                    vertical-align: top;
-                    padding: 0;
-                    border: none !important;">
-                  Vo. Bo.
-                </td>
-              </tr>
-              <tr style="border: none !important;">
-                <td colspan="2" class="espacios-firma-grandes" style="border: none !important;"></td>
-              </tr>
-              <tr style="border: none !important;">
-                <td
-                  style="
-                    width: 50%;
-                    text-align: center;
-                    vertical-align: top;
-                    padding: 0;
-                    border: none !important;">
-                  <div class="linea-firma"></div>
-                  <div class="nombre-firma">{{ getNombreJefe('jefe_promocion') || '__________________________' }}</div>
-                  <div class="cargo-firma">
-                    {{ tituloFirma('jefe_promocion') }} DE LA OFICINA DE PROMOCIÓN {{ toUpper(previewData.tipoActividad || 'CULTURAL') }}
-                  </div>
-                </td>
-                <td
-                  style="
-                    width: 50%;
-                    text-align: center;
-                    vertical-align: top;
-                    padding: 0;
-                    border: none !important;">
-                  <div class="linea-firma"></div>
-                  <div class="nombre-firma">{{ getNombreJefe('jefe_actividades') || '__________________________' }}</div>
-                  <div class="cargo-firma">
-                    {{ tituloFirma('jefe_actividades') }} DEL DEPARTAMENTO DE ACTIVIDADES EXTRAESCOLARES
-                  </div>
-                </td>
-              </tr>
+              <tbody>
+                <tr style="border: none !important;">
+                  <td
+                    style="
+                      width: 50%;
+                      text-align: center;
+                      vertical-align: top;
+                      padding: 0;
+                      border: none !important;">
+                    ATENTAMENTE
+                  </td>
+                  <td
+                    style="
+                      width: 50%;
+                      text-align: center;
+                      vertical-align: top;
+                      padding: 0;
+                      border: none !important;">
+                    Vo. Bo.
+                  </td>
+                </tr>
+                <tr style="border: none !important;">
+                  <td colspan="2" class="espacios-firma-grandes" style="border: none !important;"></td>
+                </tr>
+                <tr style="border: none !important;">
+                  <td
+                    style="
+                      width: 50%;
+                      text-align: center;
+                      vertical-align: top;
+                      padding: 0;
+                      border: none !important;">
+                    <div class="linea-firma"></div>
+                    <div class="nombre-firma">{{ getNombreJefe('jefe_promocion') || '__________________________' }}</div>
+                    <div class="cargo-firma">
+                      {{ tituloFirma('jefe_promocion') }} DE LA OFICINA DE PROMOCIÓN {{ toUpper(previewData.tipoActividad || 'CULTURAL') }}
+                    </div>
+                  </td>
+                  <td
+                    style="
+                      width: 50%;
+                      text-align: center;
+                      vertical-align: top;
+                      padding: 0;
+                      border: none !important;">
+                    <div class="linea-firma"></div>
+                    <div class="nombre-firma">{{ getNombreJefe('jefe_actividades') || '__________________________' }}</div>
+                    <div class="cargo-firma">
+                      {{ tituloFirma('jefe_actividades') }} DEL DEPARTAMENTO DE ACTIVIDADES EXTRAESCOLARES
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
             </table>
 
             <div class="pie-pagina">
@@ -344,11 +350,12 @@
             </div>
 
             <table class="tabla-pie">
-              <br>
-              <tr style="border: none !important;">
-                <td class="pie-izq" style="border: none !important;">TecNM-VI-PO-003-05</td>
-                <td class="pie-der" style="border: none !important;">Rev. 0</td>
-              </tr>
+              <tbody>
+                <tr style="border: none !important;">
+                  <td class="pie-izq" style="border: none !important;">TecNM-VI-PO-003-05</td>
+                  <td class="pie-der" style="border: none !important;">Rev. 0</td>
+                </tr>
+              </tbody>
             </table>
           </div>
         </div>

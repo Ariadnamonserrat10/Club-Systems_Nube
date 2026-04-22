@@ -448,7 +448,12 @@ export default {
         } else {
           const asist = data.asistencias || {};
           this.alumnosData = alumnos.map(al => {
-            const map = { ...(asist[al.id] || {}) };
+            const rawMap = asist[al.id] || {};
+            const map = {};
+            // PHP devuelve 1/0; normalizar a true/false
+            Object.keys(rawMap).forEach(f => { map[f] = rawMap[f] == 1; });
+            // Asegurar que todas las fechas estén presentes
+            this.fechasData.forEach(f => { if (!(f in map)) map[f] = false; });
             const faltas = Object.values(map).filter(v => v === false).length;
             return { ...al, asistencias: map, faltas };
           });
