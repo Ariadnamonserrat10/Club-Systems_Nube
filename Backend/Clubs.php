@@ -60,7 +60,7 @@ try {
   switch ($method) {
     case 'GET':
       // Listar clubs
-      $stmt = $pdo->query('SELECT c.id, c.nombre, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
+      $stmt = $pdo->query('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
       $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
       echo json_encode(['data' => $rows]);
       break;
@@ -104,9 +104,15 @@ try {
         break;
       }
 
-      $sql = 'INSERT INTO clubs (nombre, descripcion, cupo_limite, id_responsable) VALUES (:nombre, :descripcion, :cupo_limite, :id_responsable)';
+      $tipo = isset($payload['tipo']) ? strtoupper($payload['tipo']) : 'CULTURAL';
+      if (!in_array($tipo, ['CULTURAL', 'DEPORTIVO'])) {
+        $tipo = 'CULTURAL';
+      }
+
+      $sql = 'INSERT INTO clubs (nombre, tipo, descripcion, cupo_limite, id_responsable) VALUES (:nombre, :tipo, :descripcion, :cupo_limite, :id_responsable)';
       $stmt = $pdo->prepare($sql);
       $stmt->bindValue(':nombre', $nombre, PDO::PARAM_STR);
+      $stmt->bindValue(':tipo', $tipo, PDO::PARAM_STR);
       $stmt->bindValue(':descripcion', $descripcion, $descripcion === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
       $stmt->bindValue(':cupo_limite', $cupo_limite, PDO::PARAM_INT);
       if ($id_responsable === null) {
@@ -117,7 +123,7 @@ try {
       $stmt->execute();
 
       $id = (int)$pdo->lastInsertId();
-      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
+      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
       $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -153,6 +159,14 @@ try {
         }
         $fields[] = 'nombre = :nombre';
         $params[':nombre'] = [$nombre, PDO::PARAM_STR];
+      }
+      if (isset($payload['tipo'])) {
+        $tipo = strtoupper((string)$payload['tipo']);
+        if (!in_array($tipo, ['CULTURAL', 'DEPORTIVO'])) {
+          $tipo = 'CULTURAL';
+        }
+        $fields[] = 'tipo = :tipo';
+        $params[':tipo'] = [$tipo, PDO::PARAM_STR];
       }
       if (array_key_exists('descripcion', $payload)) {
         $descripcion = to_title_case((string)$payload['descripcion']);
@@ -199,7 +213,7 @@ try {
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
 
-      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
+      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
       $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -237,7 +251,7 @@ function handleWithMysqli(mysqli $mysqli)
   try {
     switch ($method) {
       case 'GET':
-        $res = $mysqli->query('SELECT c.id, c.nombre, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
+        $res = $mysqli->query('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
         $rows = [];
         if ($res) {
           while ($row = $res->fetch_assoc()) { $rows[] = $row; }
@@ -282,20 +296,25 @@ function handleWithMysqli(mysqli $mysqli)
           break;
         }
 
-        $stmt = $mysqli->prepare('INSERT INTO clubs (nombre, descripcion, cupo_limite, id_responsable) VALUES (?, ?, ?, ?)');
-        $stmt->bind_param('ssii', $nombre, $descripcion, $cupo_limite, $id_responsable);
+        $tipo = isset($payload['tipo']) ? strtoupper($payload['tipo']) : 'CULTURAL';
+        if (!in_array($tipo, ['CULTURAL', 'DEPORTIVO'])) {
+          $tipo = 'CULTURAL';
+        }
+
+        $stmt = $mysqli->prepare('INSERT INTO clubs (nombre, tipo, descripcion, cupo_limite, id_responsable) VALUES (?, ?, ?, ?, ?)');
+        $stmt->bind_param('sssii', $nombre, $tipo, $descripcion, $cupo_limite, $id_responsable);
         // Si descripcion o id_responsable son null, mysqli requiere manejo especial
         if ($descripcion === null || $id_responsable === null) {
           // Reconstruir bind evitando warnings; usar tipos dinámicos
           $stmt->close();
-          $stmt = $mysqli->prepare('INSERT INTO clubs (nombre, descripcion, cupo_limite, id_responsable) VALUES (?, ?, ?, ?)');
-          $desc = $descripcion; $resp = $id_responsable; $cupo = $cupo_limite;
-          $stmt->bind_param('ssii', $nombre, $desc, $cupo, $resp);
+          $stmt = $mysqli->prepare('INSERT INTO clubs (nombre, tipo, descripcion, cupo_limite, id_responsable) VALUES (?, ?, ?, ?, ?)');
+          $desc = $descripcion; $resp = $id_responsable; $cupo = $cupo_limite; $t = $tipo;
+          $stmt->bind_param('sssii', $nombre, $t, $desc, $cupo, $resp);
         }
         $stmt->execute();
         $id = $mysqli->insert_id;
 
-        $stmt = $mysqli->prepare('SELECT id, nombre, descripcion, cupo_limite, id_responsable, creado_en FROM clubs WHERE id = ?');
+        $stmt = $mysqli->prepare('SELECT id, nombre, tipo, descripcion, cupo_limite, id_responsable, creado_en FROM clubs WHERE id = ?');
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -333,6 +352,15 @@ function handleWithMysqli(mysqli $mysqli)
           $fields[] = 'nombre = ?';
           $types .= 's';
           $values[] = $nombre;
+        }
+        if (isset($payload['tipo'])) {
+          $tipo = strtoupper((string)$payload['tipo']);
+          if (!in_array($tipo, ['CULTURAL', 'DEPORTIVO'])) {
+            $tipo = 'CULTURAL';
+          }
+          $fields[] = 'tipo = ?';
+          $types .= 's';
+          $values[] = $tipo;
         }
         if (array_key_exists('descripcion', $payload)) {
           $descripcion = to_title_case((string)$payload['descripcion']);
@@ -378,7 +406,7 @@ function handleWithMysqli(mysqli $mysqli)
         $stmt->bind_param($types, ...$values);
         $stmt->execute();
 
-        $stmt = $mysqli->prepare('SELECT c.id, c.nombre, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = ?');
+        $stmt = $mysqli->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = ?');
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $res = $stmt->get_result();

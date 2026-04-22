@@ -361,6 +361,32 @@ const goToLogin = () => {
   showSuccessModal.value = false;
   router.push("/");
 };
+
+const copyToClipboard = async (text) => {
+  if (!text) return;
+  try {
+    if (window.navigator && window.navigator.clipboard) {
+      await window.navigator.clipboard.writeText(text);
+      alert("Contraseña copiada al portapapeles");
+    } else {
+      throw new Error("Clipboard API no disponible");
+    }
+  } catch (err) {
+    console.error("Error al copiar:", err);
+    // Fallback básico para navegadores antiguos o contextos no seguros
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert("Contraseña copiada (fallback)");
+    } catch (err) {
+      alert("No se pudo copiar automáticamente. Por favor, cópiala manualmente.");
+    }
+    document.body.removeChild(textArea);
+  }
+};
 </script>
 
 <template>
@@ -457,6 +483,7 @@ const goToLogin = () => {
               placeholder="Nombre"
               required
             />
+            <div class="form-text xsmall">Ej: Juan Carlos</div>
           </div>
           <div class="col-md-4">
             <input
@@ -465,6 +492,7 @@ const goToLogin = () => {
               placeholder="Apellido paterno"
               required
             />
+            <div class="form-text xsmall">Ej: Pérez</div>
           </div>
           <div class="col-md-4">
             <input
@@ -473,6 +501,7 @@ const goToLogin = () => {
               placeholder="Apellido materno"
               required
             />
+            <div class="form-text xsmall">Ej: García</div>
           </div>
         </div>
 
@@ -482,31 +511,35 @@ const goToLogin = () => {
             <input
               v-model="form.numeroControl"
               class="form-control"
-              placeholder="No. Control (8 dígitos)"
+              placeholder="No. Control"
               pattern="[0-9]{8}"
               required
             />
+            <div class="form-text xsmall">8 números exactos</div>
           </div>
           <div class="col-md-3">
             <input
               v-model="form.telefono"
               class="form-control"
-              placeholder="Teléfono (solo números)"
+              placeholder="Teléfono"
               pattern="[0-9]{10}"
               required
             />
+            <div class="form-text xsmall">10 números (celular)</div>
           </div>
           <div class="col-md-3">
             <select v-model.number="form.carrera" class="form-select" required>
               <option value="">Carrera</option>
               <option v-for="c in carreras" :key="c.id" :value="c.id">{{ c.nombre }}</option>
             </select>
+            <div class="form-text xsmall">Selecciona tu carrera</div>
           </div>
           <div class="col-md-3">
             <select v-model.number="form.semestre" class="form-select" required>
               <option value="">Semestre</option>
               <option v-for="n in 7" :key="n" :value="n">{{ n }}</option>
             </select>
+            <div class="form-text xsmall">Semestre actual</div>
           </div>
         </div>
 
@@ -530,6 +563,7 @@ const goToLogin = () => {
               maxlength="8"
               required
             />
+            <div class="form-text xsmall">8 letras/números combinados</div>
           </div>
           <div class="col-md-4">
             <div class="input-group">
@@ -664,13 +698,13 @@ const goToLogin = () => {
             <div v-if="generatedPassword" class="alert alert-warning small text-start mt-2">
               <div class="d-flex justify-content-between align-items-center">
                 <span><strong>Contraseña generada:</strong> {{ generatedPassword }}</span>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  @click="navigator.clipboard && navigator.clipboard.writeText(generatedPassword)"
-                >
-                  Copiar
-                </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="copyToClipboard(generatedPassword)"
+                  >
+                    Copiar
+                  </button>
               </div>
               <div class="mt-1">Guárdala en un lugar seguro.</div>
             </div>
@@ -715,6 +749,12 @@ body {
   width: 100%;
   margin-bottom: 1rem;
   padding: 1rem;
+}
+
+.xsmall {
+  font-size: 0.65rem;
+  margin-top: 2px;
+  color: #6c757d;
 }
 
 .placeholder-img {

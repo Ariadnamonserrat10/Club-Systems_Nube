@@ -1,10 +1,10 @@
 <?php
-$host = getenv('DB_HOST') ?: '35.222.207.41';
-$db   = getenv('DB_NAME') ?: 'sistema_clubs';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: 'Admin1234';
-$port = (int)(getenv('DB_PORT') ?: 3306);
-$connectTimeout = (int)(getenv('DB_CONNECT_TIMEOUT') ?: 5);
+$host = "localhost";
+$db   = "sistema_clubs";
+$user = "root";
+$pass = "";
+$port = 3306;
+$connectTimeout = 5;
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conexion = mysqli_init();
@@ -28,8 +28,24 @@ if (!$connected) {
 
 $conexion->set_charset('utf8mb4');
 
-function getMysqli() {
-    global $conexion;
-    return $conexion;
+// Compatibilidad con PDO (Requerido por Clubs.php y otros)
+try {
+    $dsn = "mysql:host=$host;dbname=$db;port=$port;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]);
+    $GLOBALS['pdo'] = $pdo;
+} catch (PDOException $e) {
+    error_log('PDO connection failed: ' . $e->getMessage());
+    // No matamos el proceso porque mysqli puede seguir funcionando
+}
+
+if (!function_exists('getMysqli')) {
+    function getMysqli() {
+        global $conexion;
+        return $conexion;
+    }
 }
 ?>
