@@ -34,10 +34,16 @@ function hasAppConfigTable(mysqli $db): bool
     return false;
 }
 
-function getConfigValue(mysqli $db, string $clave): ?string
+function getConfigValue(mysqli $db, string $clave, ?int $periodo_id = null): ?string
 {
-    $stmt = $db->prepare('SELECT valor FROM app_config WHERE clave = ? LIMIT 1');
-    $stmt->bind_param('s', $clave);
+    if ($periodo_id !== null) {
+        $stmt = $db->prepare('SELECT valor FROM historial_configuracion WHERE clave = ? AND periodo_id = ? LIMIT 1');
+        $stmt->bind_param('si', $clave, $periodo_id);
+    } else {
+        $stmt = $db->prepare('SELECT valor FROM app_config WHERE clave = ? LIMIT 1');
+        $stmt->bind_param('s', $clave);
+    }
+    
     $stmt->execute();
     $res = $stmt->get_result();
     $row = $res->fetch_assoc();
@@ -81,9 +87,11 @@ try {
             exit;
         }
 
-        $firmaJefeActividades = getConfigValue($conexion, 'firma_jefe_actividades');
-        $firmaJefePromocion = getConfigValue($conexion, 'firma_jefe_promocion');
-        $firmaJefaServicios = getConfigValue($conexion, 'firma_jefa_servicios');
+        $periodo_id = isset($_GET['periodo_id']) && $_GET['periodo_id'] !== '' ? (int)$_GET['periodo_id'] : null;
+
+        $firmaJefeActividades = getConfigValue($conexion, 'firma_jefe_actividades', $periodo_id);
+        $firmaJefePromocion = getConfigValue($conexion, 'firma_jefe_promocion', $periodo_id);
+        $firmaJefaServicios = getConfigValue($conexion, 'firma_jefa_servicios', $periodo_id);
 
         $result = [
             'jefe_actividades' => null,

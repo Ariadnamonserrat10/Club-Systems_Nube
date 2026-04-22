@@ -26,13 +26,13 @@ try {
 
     if (isset($_GET['club_id']) && $_GET['club_id'] !== '') {
       $clubId = (int)$_GET['club_id'];
-      $stmt = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club, fecha_registro FROM alumnos WHERE id_club = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
+      $stmt = $conexion->prepare("SELECT a.id, a.nombre, a.apellidoP, a.apellidoM, a.numeroControl, a.telefono, a.carrera_id, a.semestre_id, a.id_club, a.fecha_registro FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = ? AND p.estado = 'ACTIVO' ORDER BY a.apellidoP ASC, a.apellidoM ASC, a.nombre ASC");
       $stmt->bind_param('i', $clubId);
       $stmt->execute();
       $res = $stmt->get_result();
       while ($row = $res->fetch_assoc()) { $rows[] = $row; }
     } else {
-      $sql = 'SELECT id, nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club, fecha_registro FROM alumnos ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC';
+      $sql = "SELECT a.id, a.nombre, a.apellidoP, a.apellidoM, a.numeroControl, a.telefono, a.carrera_id, a.semestre_id, a.id_club, a.fecha_registro FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE p.estado = 'ACTIVO' ORDER BY a.apellidoP ASC, a.apellidoM ASC, a.nombre ASC";
       if ($res = $conexion->query($sql)) {
         while ($row = $res->fetch_assoc()) { $rows[] = $row; }
       }
@@ -71,8 +71,8 @@ try {
       exit;
     }
 
-    // Validar duplicado por numeroControl
-    $stmtCheck = $conexion->prepare('SELECT id FROM alumnos WHERE numeroControl = ? LIMIT 1');
+    // Validar duplicado por numeroControl en el periodo activo
+    $stmtCheck = $conexion->prepare("SELECT a.id FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.numeroControl = ? AND p.estado = 'ACTIVO' LIMIT 1");
     $stmtCheck->bind_param('s', $numeroControl);
     $stmtCheck->execute();
     $stmtCheck->store_result();
@@ -83,7 +83,7 @@ try {
     }
 
     // Insert
-    $sql = 'INSERT INTO alumnos (nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    $sql = "INSERT INTO alumnos (nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club, periodo_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1))";
     $stmt = $conexion->prepare($sql);
 
     // Normalizar nullables
@@ -167,8 +167,8 @@ try {
       exit;
     }
 
-    // Validar duplicado por numeroControl al actualizar
-    $stmtCheck = $conexion->prepare('SELECT id FROM alumnos WHERE numeroControl = ? AND id <> ? LIMIT 1');
+    // Validar duplicado por numeroControl al actualizar en el periodo activo
+    $stmtCheck = $conexion->prepare("SELECT a.id FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.numeroControl = ? AND a.id <> ? AND p.estado = 'ACTIVO' LIMIT 1");
     $stmtCheck->bind_param('si', $numeroControl, $id);
     $stmtCheck->execute();
     $stmtCheck->store_result();

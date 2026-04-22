@@ -60,7 +60,7 @@ try {
   switch ($method) {
     case 'GET':
       // Listar clubs
-      $stmt = $pdo->query('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
+      $stmt = $pdo->query('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = c.id AND p.estado = \'ACTIVO\') AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
       $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
       echo json_encode(['data' => $rows]);
       break;
@@ -123,7 +123,7 @@ try {
       $stmt->execute();
 
       $id = (int)$pdo->lastInsertId();
-      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
+      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = c.id AND p.estado = \'ACTIVO\') AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
       $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -213,7 +213,7 @@ try {
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
 
-      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
+      $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = c.id AND p.estado = \'ACTIVO\') AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = :id');
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
       $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -244,14 +244,13 @@ try {
   echo json_encode(['error' => 'Excepción', 'message' => $e->getMessage()]);
 }
 
-// Implementación con mysqli si db.php no expone PDO
 function handleWithMysqli(mysqli $mysqli)
 {
   $method = $_SERVER['REQUEST_METHOD'];
   try {
     switch ($method) {
       case 'GET':
-        $res = $mysqli->query('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
+        $res = $mysqli->query('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = c.id AND p.estado = \'ACTIVO\') AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c ORDER BY c.id DESC');
         $rows = [];
         if ($res) {
           while ($row = $res->fetch_assoc()) { $rows[] = $row; }
@@ -406,7 +405,7 @@ function handleWithMysqli(mysqli $mysqli)
         $stmt->bind_param($types, ...$values);
         $stmt->execute();
 
-        $stmt = $mysqli->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a WHERE a.id_club = c.id) AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = ?');
+        $stmt = $mysqli->prepare('SELECT c.id, c.nombre, c.tipo, c.descripcion, c.cupo_limite, (SELECT COUNT(*) FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = c.id AND p.estado = \'ACTIVO\') AS cupo_ocupado, c.id_responsable, c.creado_en FROM clubs c WHERE c.id = ?');
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $res = $stmt->get_result();

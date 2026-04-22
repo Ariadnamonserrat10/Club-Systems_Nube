@@ -44,10 +44,19 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     if ($method === 'GET') {
+        $periodo_id = isset($_GET['periodo_id']) && $_GET['periodo_id'] !== '' ? (int)$_GET['periodo_id'] : null;
+
         if (isset($_GET['clave']) && trim((string)$_GET['clave']) !== '') {
             $clave = trim((string)$_GET['clave']);
-            $stmt = $conexion->prepare('SELECT clave, valor, actualizado_en FROM app_config WHERE clave = ? LIMIT 1');
-            $stmt->bind_param('s', $clave);
+            
+            if ($periodo_id) {
+                $stmt = $conexion->prepare('SELECT clave, valor FROM historial_configuracion WHERE clave = ? AND periodo_id = ? LIMIT 1');
+                $stmt->bind_param('si', $clave, $periodo_id);
+            } else {
+                $stmt = $conexion->prepare('SELECT clave, valor, actualizado_en FROM app_config WHERE clave = ? LIMIT 1');
+                $stmt->bind_param('s', $clave);
+            }
+            
             $stmt->execute();
             $res = $stmt->get_result();
             $row = $res->fetch_assoc();
@@ -56,7 +65,15 @@ try {
         }
 
         $rows = [];
-        $res = $conexion->query('SELECT clave, valor, actualizado_en FROM app_config ORDER BY clave ASC');
+        if ($periodo_id) {
+            $stmt = $conexion->prepare('SELECT clave, valor FROM historial_configuracion WHERE periodo_id = ? ORDER BY clave ASC');
+            $stmt->bind_param('i', $periodo_id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+        } else {
+            $res = $conexion->query('SELECT clave, valor, actualizado_en FROM app_config ORDER BY clave ASC');
+        }
+        
         if ($res) {
             while ($r = $res->fetch_assoc()) {
                 $rows[] = $r;

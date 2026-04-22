@@ -68,6 +68,24 @@
             <a
               href="#"
               class="nav-link text-white"
+              @click.prevent="setView('Periodos')"
+              >Periodos</a
+            >
+          </li>
+
+          <li class="nav-item">
+            <a
+              href="#"
+              class="nav-link text-white"
+              @click.prevent="setView('Reinscripciones')"
+              >Reinscripciones</a
+            >
+          </li>
+
+          <li class="nav-item">
+            <a
+              href="#"
+              class="nav-link text-white"
               @click.prevent="setView('Constancias')"
               >Constancias</a
             >
@@ -115,6 +133,7 @@
         @update-alumno="handleUpdateAlumno"
         @request-reload-alumnos="loadAlumnos"
         @show-error="showError"
+        @show-toast="showToast"
       />
     </div>
 
@@ -146,6 +165,8 @@ import AlumnosR from "../components/AlumnosR.vue";
 import Constancias from "../components/Constancias.vue";
 import Auditoria from "../components/Auditoria.vue";
 import Listas from "../components/Listas.vue";
+import Periodos from "../components/Periodos.vue";
+import Reinscripciones from "../components/Reinscripciones.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
 import axios from "axios";
 import { BACKEND } from "../services/backend";
@@ -160,6 +181,8 @@ export default {
     Constancias,
     Auditoria,
     Listas,
+    Periodos,
+    Reinscripciones,
   },
   data() {
     return {
