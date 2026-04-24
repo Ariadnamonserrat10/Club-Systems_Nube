@@ -122,6 +122,12 @@
               <div class="row">
                 <div class="col-md-6"><strong>Estudiante:</strong> {{ evalForm.nombre_estudiante }}</div>
                 <div class="col-md-6"><strong>Club:</strong> {{ evalForm.nombre_club }}</div>
+                <div v-if="currentStudent && currentStudent.faltas >= 3" class="col-12 mt-2">
+                  <div class="alert alert-warning py-1 mb-0 small">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    Este estudiante tiene {{ currentStudent.faltas }} faltas y no acreditará créditos independientemente de la evaluación.
+                  </div>
+                </div>
                 <div class="col-12 mt-2">
                   <label class="form-label"><strong>Periodo de realización:</strong></label>
                   <input type="date" v-model="evalForm.periodo_realizacion" class="form-control" />
@@ -376,7 +382,7 @@ export default {
       const target = normalize(nombreFull);
       const targetTokens = target.split(' ').filter(Boolean);
       return this.evaluados.some(e => {
-        const norm = normalize(e || '');
+        const norm = normalize(e.nombre_estudiante || '');
         if (norm === target) return true;
         return targetTokens.every(t => norm.includes(t));
       });
@@ -490,7 +496,14 @@ export default {
               descripcion: `Se evaluó al estudiante ${f.nombre_estudiante}`
             });
           }
-          if (!this.evaluados.includes(f.nombre_estudiante)) this.evaluados.push(f.nombre_estudiante);
+          if (!this.evaluados.some(e => e.nombre_estudiante === f.nombre_estudiante)) {
+            this.evaluados.push({ 
+              nombre_estudiante: f.nombre_estudiante,
+              nivel_desempeno: sendPayload.nivel_desempeno,
+              valor_numerico: sendPayload.valor_numerico,
+              observaciones: sendPayload.observaciones
+            });
+          }
         }
       } catch (e) {
         this.mostrarMensaje(e.message || 'Error al guardar evaluación', 'alert-danger');
@@ -500,7 +513,12 @@ export default {
   async mounted() {
     await this.cargarUsuarioActual();
     await this.loadAsistencias();
+    // Auto-refresco cada 30 segundos
+    this.refreshInterval = setInterval(() => this.loadAsistencias(), 30000);
   },
+  beforeUnmount() {
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
+  }
 };
 </script>
 

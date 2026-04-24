@@ -487,7 +487,8 @@ export default {
         jefa_servicios: "",
         jefa_servicios_nombre: ""
       },
-      selectedStudent: null // Alumno seleccionado por búsqueda
+      selectedStudent: null, // Alumno seleccionado por búsqueda
+      refreshInterval: null
     };
   },
   computed: {
@@ -732,8 +733,8 @@ export default {
       });
     },
     desempenoValor(desempeno) {
-      const mapa = { EXCELENTE: 5, NOTABLE: 4, BUENO: 3, REGULAR: 2, SUFICIENTE: 2, DEFICIENTE: 1, INSUFICIENTE: 1 };
-      return mapa[(desempeno || "").toUpperCase()] || 1;
+      const mapa = { EXCELENTE: 4, NOTABLE: 3, BUENO: 2, REGULAR: 1, SUFICIENTE: 1, DEFICIENTE: 0, INSUFICIENTE: 0 };
+      return mapa[(desempeno || "").toUpperCase()] !== undefined ? mapa[(desempeno || "").toUpperCase()] : 0;
     },
     getPeriodoActual() {
       const f = new Date();
@@ -1191,7 +1192,12 @@ export default {
       script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
       document.head.appendChild(script);
     }
+    // Auto-refresco cada 30 segundos
+    this.refreshInterval = setInterval(() => this.loadAsistenciasPorClubs(), 30000);
   },
+  beforeUnmount() {
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
+  }
 };
 </script>
 

@@ -59,8 +59,8 @@
             <a
               href="#"
               class="nav-link text-white"
-              @click.prevent="setView('Listas')"
-              >Listas de clubs</a
+              @click.prevent="setView('Evaluaciones')"
+              >Evaluaciones</a
             >
           </li>
 
@@ -164,7 +164,7 @@ import AlumnosSR from "../components/AlumnosSR.vue";
 import AlumnosR from "../components/AlumnosR.vue";
 import Constancias from "../components/Constancias.vue";
 import Auditoria from "../components/Auditoria.vue";
-import Listas from "../components/Listas.vue";
+import Evaluaciones from "../components/Evaluaciones.vue";
 import Periodos from "../components/Periodos.vue";
 import Reinscripciones from "../components/Reinscripciones.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
@@ -180,7 +180,7 @@ export default {
     AlumnosR,
     Constancias,
     Auditoria,
-    Listas,
+    Evaluaciones,
     Periodos,
     Reinscripciones,
   },

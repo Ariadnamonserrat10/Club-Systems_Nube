@@ -20,8 +20,8 @@ if ($clubName === '') {
 }
 
 try {
-    // Obtenemos solo los nombres de los estudiantes ya evaluados en este club
-    $sql = "SELECT DISTINCT nombre_estudiante FROM evaluaciones WHERE nombre_club = ?";
+    // Obtenemos los nombres y detalles de los estudiantes ya evaluados en este club
+    $sql = "SELECT nombre_estudiante, nivel_desempeno, valor_numerico, observaciones FROM evaluaciones WHERE nombre_club = ?";
     $stmt = $conexion->prepare($sql);
     $stmt->bind_param("s", $clubName);
     $stmt->execute();
@@ -29,7 +29,7 @@ try {
     
     $evaluados = [];
     while ($row = $result->fetch_assoc()) {
-        $evaluados[] = $row['nombre_estudiante'];
+        $evaluados[] = $row;
     }
 
     echo json_encode(['status' => 'success', 'data' => $evaluados]);
