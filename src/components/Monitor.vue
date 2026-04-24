@@ -41,6 +41,7 @@
     <!-- CONTENEDOR DE ASISTENCIAS -->
     <div class="card shadow-sm p-3 flex-grow-1 overflow-auto" style="max-height: 70vh;">
       <h5 class="text-secondary mb-3">Asistencias del Club</h5>
+
       <!-- AGREGAR NUEVA FECHA -->
       <div class="mb-3">
         <label for="nuevaFecha" class="form-label">Agregar nueva fecha:</label>
@@ -62,11 +63,12 @@
             <th>Nombre</th>
             <th v-for="fecha in fechasData" :key="fecha">{{ fecha }}</th>
             <th>Acreditado</th>
+            <th>Evaluación</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="alumnosClub.length === 0">
-            <td :colspan="(fechasData.length + 2)" class="text-center text-muted">
+            <td :colspan="(fechasData.length + 3)" class="text-center text-muted">
               No hay alumnos registrados en este club.
             </td>
           </tr>
@@ -80,12 +82,19 @@
               />
             </td>
             <td class="text-center">
-              <span
-                class="badge"
-                :class="alumno.faltas < 3 ? 'bg-success' : 'bg-danger'"
-              >
+              <span class="badge" :class="alumno.faltas < 3 ? 'bg-success' : 'bg-danger'">
                 {{ alumno.faltas < 3 ? 'Acreditado' : 'No acreditado' }}
               </span>
+            </td>
+            <td class="text-center">
+              <button
+                v-if="!isEvaluated(alumno)"
+                class="btn btn-sm btn-outline-primary"
+                @click="openEvalModal(alumno)"
+              >
+                Evaluar
+              </button>
+              <span v-else class="badge bg-secondary">Evaluado</span>
             </td>
           </tr>
         </tbody>
@@ -98,70 +107,185 @@
         </button>
       </div>
     </div>
+
+    <!-- MODAL EVALUACION -->
+    <div v-if="showEvalModal" class="modal-backdrop fade show"></div>
+    <div v-if="showEvalModal" class="modal d-block" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Evaluación de Desempeño</h5>
+            <button type="button" class="btn-close btn-close-white" @click="closeEvalModal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3 p-2 bg-light rounded border">
+              <div class="row">
+                <div class="col-md-6"><strong>Estudiante:</strong> {{ evalForm.nombre_estudiante }}</div>
+                <div class="col-md-6"><strong>Club:</strong> {{ evalForm.nombre_club }}</div>
+                <div class="col-12 mt-2">
+                  <label class="form-label"><strong>Periodo de realización:</strong></label>
+                  <input type="date" v-model="evalForm.periodo_realizacion" class="form-control" />
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="card bg-light mb-2">
+                <div class="card-body py-2">
+                  <h6 class="mb-1">Guía de Valores</h6>
+                  <ul class="list-unstyled small mb-0 d-flex justify-content-between flex-wrap">
+                    <li class="me-2"><strong>1:</strong> Insuficiente</li>
+                    <li class="me-2"><strong>2:</strong> Suficiente</li>
+                    <li class="me-2"><strong>3:</strong> Bueno</li>
+                    <li class="me-2"><strong>4:</strong> Notable</li>
+                    <li><strong>5:</strong> Excelente</li>
+                  </ul>
+                </div>
+              </div>
+
+              <h6>Criterios a evaluar</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                  <thead class="table-light text-center">
+                    <tr>
+                      <th style="width: 5%">No.</th>
+                      <th style="width: 55%">Criterio</th>
+                      <th style="width: 8%">1</th>
+                      <th style="width: 8%">2</th>
+                      <th style="width: 8%">3</th>
+                      <th style="width: 8%">4</th>
+                      <th style="width: 8%">5</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(criterio, i) in criteriosList" :key="i">
+                      <td class="text-center">{{ i + 1 }}</td>
+                      <td>{{ criterio }}</td>
+                      <td v-for="val in 5" :key="val" class="text-center">
+                        <input 
+                          type="radio" 
+                          :name="'criterio_' + (i+1)" 
+                          :value="val" 
+                          v-model="evalForm['criterio_' + (i+1)]"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label"><strong>Observaciones:</strong></label>
+              <textarea v-model="evalForm.observaciones" class="form-control" rows="4" placeholder="Escriba sus observaciones aquí..."></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label"><strong>Valor numérico de la actividad Cultural y/o Deportiva:</strong></label>
+                <select v-model.number="evalForm.valor_numerico" class="form-select">
+                  <option disabled value="">Seleccione</option>
+                  <option value="1">1 (Insuficiente)</option>
+                  <option value="2">2 (Suficiente)</option>
+                  <option value="3">3 (Bueno)</option>
+                  <option value="4">4 (Notable)</option>
+                  <option value="5">5 (Excelente)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"><strong>Nivel de desempeño alcanzado de la actividad Cultural y/o Deportiva:</strong></label>
+                 <select v-model.number="evalForm.nivel_desempeno" class="form-select">
+                  <option disabled value="">Seleccione</option>
+                   <option value="1">1 (Insuficiente)</option>
+                  <option value="2">2 (Suficiente)</option>
+                  <option value="3">3 (Bueno)</option>
+                  <option value="4">4 (Notable)</option>
+                  <option value="5">5 (Excelente)</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeEvalModal">Cancelar</button>
+            <button type="button" class="btn btn-primary" @click="submitEvaluacion">Guardar Evaluación</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import { getAsistenciasPorClub, crearFechaAsistencias, actualizarAsistencia, getClubs } from "../services/api";
+import { 
+  getAsistenciasPorClub, 
+  crearFechaAsistencias, 
+  actualizarAsistencia, 
+  getAlumnos, 
+  registrarAuditoria, 
+  saveEvaluacion,
+  getEvaluatedStudents,
+  getClubs
+} from "../services/api";
 import { BACKEND } from "../services/backend";
 
 export default {
   name: "Monitor",
-  // No props; el componente se auto gestiona desde backend
   data() {
     return {
       usuarioActual: {
         nombre: "",
         apellidoP: "",
         tipo: "",
-        foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png", // fallback
+        foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
         club_asignado: null,
         club_nombre: null,
       },
-      monitor: { nombre: "Carlos Pérez", club: "Club de Robótica" }, // se reemplazará si BD trae club
-      clubsList: [],          // lista de clubs desde BD
-      selectedClubId: null,   // id seleccionado en el dropdown
-      assigning: false,       // flag al asignar
+      monitor: { nombre: "", club: "" },
+      clubsList: [],
+      selectedClubId: null,
+      assigning: false,
       nuevaFecha: "",
       mensaje: { texto: "", tipo: "" },
-      // listas manejadas desde backend
       alumnosData: [],
       fechasData: [],
+      showEvalModal: false,
+      currentStudent: null,
+      evaluados: [],
+      criteriosList: [
+        "Cumple en tiempo y forma con las actividades encomendadas alcanzando los objetivos.",
+        "Trabaja en equipo y se adapta a nuevas situaciones.",
+        "Muestra liderazgo en las actividades encomendadas.",
+        "Organiza su tiempo y trabaja de manera proactiva.",
+        "Interpreta la realidad y se sensibiliza aportando soluciones a la problemática con la actividad Cultural y/o Deportiva.",
+        "Realiza sugerencias innovadoras para beneficio o mejora del programa en el que participa.",
+        "Tiene iniciativa para ayudar en las actividades encomendadas and muestra espíritu de servicio."
+      ],
+      evalForm: {
+        nombre_estudiante: '',
+        nombre_club: '',
+        periodo_realizacion: '',
+        criterio_1: null, criterio_2: null, criterio_3: null, criterio_4: null, criterio_5: null, criterio_6: null, criterio_7: null,
+        observaciones: '',
+        valor_numerico: null,
+        nivel_desempeno: null
+      }
     };
   },
   computed: {
-    clubs() {
-      return this.clubsList;
-    },
     alumnosClub() {
-      // Ya vienen filtrados por club desde backend; asegurar asistencias y faltas
       return (this.alumnosData || []).map((a) => {
-        if (!a.asistencias) {
-          a.asistencias = {};
-        }
-        // Inicializar para todas las fechas
+        if (!a.asistencias) a.asistencias = {};
         this.fechasData.forEach((f) => {
-          if (!(f in a.asistencias)) {
-            a.asistencias[f] = false;
-          }
+          if (!(f in a.asistencias)) a.asistencias[f] = false;
         });
-        // Recalcular faltas
         a.faltas = Object.values(a.asistencias).filter((v) => v === false).length;
         return a;
       });
     },
   },
   methods: {
-    syncClubNombre() {
-      const clubId = Number(this.usuarioActual.club_asignado);
-      if (!clubId) {
-        this.usuarioActual.club_nombre = null;
-        return;
-      }
-      const club = (this.clubsList || []).find(c => Number(c.id) === clubId);
-      this.usuarioActual.club_nombre = club?.nombre || this.usuarioActual.club_nombre || `Club ID ${clubId}`;
-    },
     resolveFotoUrl(foto) {
       if (!foto || typeof foto !== "string") return "";
       if (foto.startsWith("blob:")) return "";
@@ -172,15 +296,11 @@ export default {
     async cargarUsuarioActual() {
       try {
         const usuarioId = sessionStorage.getItem("usuarioId");
-        if (!usuarioId) {
-          sessionStorage.clear();
-          this.$router.push("/");
-          return;
-        }
+        if (!usuarioId) return;
 
-        const response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
+        const response = await axios.get(`${BACKEND}/obtenerUsuario.php?id=${usuarioId}`);
 
-        if (response.data?.status === "success" && response.data.data) {
+        if (response.data?.status === "success") {
           const datos = response.data.data;
           this.usuarioActual.nombre = datos.nombre || "";
           this.usuarioActual.apellidoP = datos.apellidoP || "";
@@ -189,104 +309,78 @@ export default {
           this.usuarioActual.club_asignado = datos.club_asignado ?? null;
           this.usuarioActual.club_nombre = datos.club_nombre ?? null;
           this.selectedClubId = this.usuarioActual.club_asignado;
-          this.syncClubNombre();
-
-          // Si la BD devuelve el club asignado al monitor, opcionalmente actualizarlo
           if (datos.club_nombre) this.monitor.club = datos.club_nombre;
-        } else {
-          console.warn("Usuario no encontrado o respuesta inválida, cerrando sesión.");
-          sessionStorage.clear();
-          this.$router.push("/");
-          return;
         }
       } catch (error) {
-        if (error?.response?.status === 404) {
-          console.warn("usuarioId no existe en backend. Se limpia sesión.");
-          sessionStorage.clear();
-          this.$router.push("/");
-          return;
-        }
         console.error("Error cargando usuario Monitor:", error);
       }
     },
 
     async loadAsistencias() {
       const clubId = this.usuarioActual.club_asignado;
-      if (!clubId) {
-        console.log('No hay club asignado');
-        return;
-      }
+      if (!clubId) return;
       try {
-        console.log('Cargando asistencias para club:', clubId);
-        
-        // 1) Cargar alumnos por club (garantiza lista aunque no haya asistencias)
         let alumnosClub = [];
         try {
           const res = await fetch(`${BACKEND}/Alumnos.php?club_id=${encodeURIComponent(clubId)}`);
           const json = await res.json();
-          console.log('Respuesta de Alumnos.php:', json);
           if (res.ok && json && Array.isArray(json.data)) {
             alumnosClub = json.data;
-            console.log('Alumnos cargados:', alumnosClub.length);
           }
         } catch (e) {
           console.error('Error cargando alumnos por club:', e);
         }
 
-        // 2) Cargar asistencias por club
         const data = await getAsistenciasPorClub(clubId);
-        console.log('Datos de asistencias:', data);
-        
-        // fechas en ISO yyyy-mm-dd desde la BD
-        const fechasBD = Array.isArray(data.fechas) ? data.fechas : [];
-        console.log('Fechas desde BD:', fechasBD);
-        
-        // REEMPLAZAR fechas locales con las de la BD para evitar desincronización
-        this.fechasData = [...fechasBD].sort();
-        console.log('Fechas sincronizadas:', this.fechasData);
+        const nuevasFechas = Array.isArray(data.fechas) ? data.fechas : [];
+        this.fechasData = [...new Set([...this.fechasData, ...nuevasFechas])].sort();
 
-        // Preferir alumnos del endpoint de asistencias si vienen, si no usar los de alumnos por club
         const alumnos = (Array.isArray(data.alumnos) && data.alumnos.length) ? data.alumnos : alumnosClub;
-        console.log('Total de alumnos a mostrar:', alumnos.length);
-        
         const asist = data.asistencias || {};
 
-        // Mapear estructura de asistencias por alumno y fecha, normalizando 1/0 a true/false
-        const alumnosMappeados = (alumnos || []).map((al) => {
+        this.alumnosData = (alumnos || []).map((al) => {
           const rawMap = asist[al.id] || {};
           const map = {};
-          // PHP devuelve 1/0; normalizar a true/false
           Object.keys(rawMap).forEach(f => { map[f] = rawMap[f] == 1; });
-          // Asegurar que todas las fechas estén presentes
           this.fechasData.forEach(fecha => {
             if (!(fecha in map)) map[fecha] = false;
           });
           return { ...al, asistencias: map, faltas: Object.values(map).filter(v => v === false).length };
         });
         
-        // Asignar directamente (Vue 3 es reactivo por default)
-        this.alumnosData = alumnosMappeados;
-        console.log('alumnosData actualizado:', this.alumnosData.length);
-        
-        // Forzar actualización
+        if (this.alumnosData.length > 0) {
+          const clubName = this.usuarioActual.club_nombre || this.alumnosData[0].club || '';
+          if (clubName) this.loadEvaluatedStudents(clubName);
+        }
         this.$forceUpdate();
-        
       } catch (e) {
         console.error('Error cargando asistencias:', e);
         this.mostrarMensaje('No se pudieron cargar asistencias', 'alert-danger');
       }
     },
 
-    async cargarClubs() {
+    async loadEvaluatedStudents(clubName) {
       try {
-        const clubs = await getClubs();
-        this.clubsList = Array.isArray(clubs) ? clubs : [];
-        this.syncClubNombre();
-      } catch (err) {
-        console.error("Error cargando lista de clubs:", err);
+        this.evaluados = await getEvaluatedStudents(clubName);
+      } catch (e) {
+        console.error('Error loading evaluated students:', e);
       }
     },
-
+    isEvaluated(alumno) {
+      const nombreFull = `${alumno.nombre} ${alumno.apellidoP} ${alumno.apellidoM || ''}`.trim();
+      function normalize(s) {
+        if (!s) return '';
+        const from = s.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        return from.toLowerCase().replace(/\s+/g, ' ').trim();
+      }
+      const target = normalize(nombreFull);
+      const targetTokens = target.split(' ').filter(Boolean);
+      return this.evaluados.some(e => {
+        const norm = normalize(e || '');
+        if (norm === target) return true;
+        return targetTokens.every(t => norm.includes(t));
+      });
+    },
     mostrarMensaje(texto, tipo) {
       this.mensaje.texto = texto;
       this.mensaje.tipo = tipo;
@@ -294,91 +388,48 @@ export default {
     },
     cerrarSesion() {
       this.mostrarMensaje("Sesión cerrada correctamente.", "alert-info");
-      // pequeño retardo para mostrar el mensaje antes de redirigir
       setTimeout(() => {
         sessionStorage.clear();
-        this.$router.push("/"); // regresar al login
+        this.$router.push("/");
       }, 1500);
     },
     async agregarFecha() {
-      if (!this.nuevaFecha) {
-        this.mostrarMensaje("Seleccione una fecha antes de agregar.", "alert-warning");
-        return;
-      }
-      if (!this.usuarioActual.club_asignado) {
-        this.mostrarMensaje("No hay club asignado.", "alert-danger");
-        return;
-      }
-      const fechaISO = this.nuevaFecha; // YYYY-MM-DD desde input type="date"
-      console.log('Intentando agregar fecha:', fechaISO);
-      console.log('Fecha ya existe?', this.fechasData.includes(fechaISO));
-      
-      if (this.fechasData.includes(fechaISO)) {
+      if (!this.nuevaFecha || !this.usuarioActual.club_asignado) return;
+      if (this.fechasData.includes(this.nuevaFecha)) {
         this.mostrarMensaje("La fecha ya está registrada.", "alert-danger");
         return;
       }
       try {
-        // crear registros default (presente=false) para cada alumno del club
         const registros = this.alumnosClub.map(a => ({ alumno_id: a.id, presente: false }));
-        console.log('Enviando registros:', registros);
-        
-        const respuesta = await crearFechaAsistencias({ club_id: this.usuarioActual.club_asignado, fecha: fechaISO, registros });
-        console.log('Respuesta del servidor:', respuesta);
-        console.log('Fecha creada en backend');
-        
-        // Agregar la fecha localmente SIN recargar todo
-        this.fechasData.push(fechaISO);
+        await crearFechaAsistencias({ club_id: this.usuarioActual.club_asignado, fecha: this.nuevaFecha, registros });
+        this.fechasData.push(this.nuevaFecha);
         this.fechasData.sort();
-        console.log('Fecha agregada localmente. fechasData ahora:', this.fechasData);
-        
-        // Inicializar asistencia para la nueva fecha en todos los alumnos (sin borrar las anteriores)
-        this.alumnosData.forEach(alumno => {
-          if (!alumno.asistencias) {
-            alumno.asistencias = {};
-          }
-          // Solo agregar si no existe
-          if (!(fechaISO in alumno.asistencias)) {
-            alumno.asistencias[fechaISO] = false;
-          }
-        });
-        
-        this.$forceUpdate();
+        this.alumnosData.forEach(al => { if (!al.asistencias[this.nuevaFecha]) al.asistencias[this.nuevaFecha] = false; });
         this.nuevaFecha = "";
         this.mostrarMensaje("Fecha agregada correctamente.", "alert-success");
       } catch (e) {
-        console.error('Error creando fecha:', e);
-        console.error('Detalles del error:', JSON.stringify(e));
-        this.mostrarMensaje("No se pudo crear la fecha: " + (e.message || e), "alert-danger");
+        this.mostrarMensaje("Error al crear fecha", "alert-danger");
       }
-    },
-    async actualizarFaltas(alumno) {
-      // Este método se dispara al cambiar un checkbox
-      alumno.faltas = Object.values(alumno.asistencias).filter((v) => v === false).length;
     },
     async guardarCambios() {
       try {
-        console.log('Guardando cambios...');
-        // Guardar todas las asistencias de todos los alumnos para todas las fechas
         const promesas = [];
-        
         for (const alumno of this.alumnosData) {
           for (const fecha of this.fechasData) {
-            const presente = !!alumno.asistencias[fecha];
-            promesas.push(
-              actualizarAsistencia({ 
-                alumno_id: alumno.id, 
-                fecha, 
-                presente 
-              }).catch(e => console.error(`Error guardando ${alumno.id} en ${fecha}:`, e))
-            );
+            promesas.push(actualizarAsistencia({ alumno_id: alumno.id, fecha, presente: !!alumno.asistencias[fecha] }));
           }
         }
-        
         await Promise.all(promesas);
-        console.log('Todos los cambios guardados en BD');
         this.mostrarMensaje("Cambios guardados correctamente.", "alert-success");
+        const usuarioId = sessionStorage.getItem('usuarioId');
+        if (usuarioId) {
+          await registrarAuditoria({
+            id_usuario: parseInt(usuarioId),
+            accion: 'Asistencia',
+            descripcion: `Registró asistencias para el club ${this.usuarioActual.club_nombre || 'N/A'}`
+          });
+        }
       } catch (e) {
-        console.error('Error guardando cambios:', e);
         this.mostrarMensaje("Error al guardar cambios.", "alert-danger");
       }
     },
@@ -386,67 +437,79 @@ export default {
       const presente = !!alumno.asistencias[fecha];
       try {
         await actualizarAsistencia({ alumno_id: alumno.id, fecha, presente });
-        this.actualizarFaltas(alumno);
+        alumno.faltas = Object.values(alumno.asistencias).filter((v) => v === false).length;
       } catch (e) {
-        console.error('Error actualizando asistencia:', e);
-        // revertir cambio
         alumno.asistencias[fecha] = !presente;
-        this.mostrarMensaje('No se pudo actualizar asistencia', 'alert-danger');
+        this.mostrarMensaje('Error al actualizar asistencia', 'alert-danger');
       }
     },
-    async asignarClub() {
-      if (!this.selectedClubId) return;
-      this.assigning = true;
+    openEvalModal(alumno) {
+      this.currentStudent = alumno;
+      const clubName = alumno.club || (this.alumnosData[0]?.club) || this.usuarioActual.club_nombre || 'Sin Club';
+      this.evalForm = {
+        nombre_estudiante: `${alumno.nombre} ${alumno.apellidoP} ${alumno.apellidoM || ''}`.trim(),
+        nombre_club: clubName,
+        periodo_realizacion: new Date().toISOString().split('T')[0],
+        criterio_1: null, criterio_2: null, criterio_3: null, criterio_4: null, criterio_5: null, criterio_6: null, criterio_7: null,
+        observaciones: '',
+        valor_numerico: null,
+        nivel_desempeno: null
+      };
+      this.showEvalModal = true;
+    },
+    closeEvalModal() { this.showEvalModal = false; },
+    async submitEvaluacion() {
+      const f = this.evalForm;
+      if (!f.criterio_1 || !f.criterio_2 || !f.criterio_3 || !f.criterio_4 || !f.criterio_5 || !f.criterio_6 || !f.criterio_7) {
+        return alert('Por favor califique todos los criterios.');
+      }
+      if (!f.valor_numerico || !f.nivel_desempeno) {
+        return alert('Por favor asigne valor numérico y nivel de desempeño.');
+      }
       try {
-        const usuarioId = sessionStorage.getItem("usuarioId");
-        const payload = { usuarioId: Number(usuarioId), club_id: Number(this.selectedClubId) };
-        const res = await axios.post(`${BACKEND}/asignarClub.php`, payload, {
-          headers: { "Content-Type": "application/json" }
-        });
+        const payload = { ...this.evalForm };
+        for (let i = 1; i <= 7; i++) payload['criterio_' + i] = parseInt(payload['criterio_' + i], 10);
+        
+        // Ajuste 1-5 -> 0-4 para valor_numerico y nivel_desempeno
+        const sendPayload = {
+          ...payload,
+          valor_numerico: parseInt(payload.valor_numerico, 10) - 1,
+          nivel_desempeno: parseInt(payload.nivel_desempeno, 10) - 1,
+          observaciones: payload.observaciones || ''
+        };
 
-        if (res.data?.status === "success") {
-          // actualizar vista local
-          const club = this.clubsList.find(c => c.id === Number(this.selectedClubId));
-          this.usuarioActual.club_asignado = club ? club.id : this.selectedClubId;
-          this.usuarioActual.club_nombre = club ? club.nombre : `Club ID ${this.selectedClubId}`;
-          this.monitor.club = this.usuarioActual.club_nombre;
-          this.mensaje = { texto: "Club asignado correctamente.", tipo: "success" };
-        } else {
-          this.mensaje = { texto: res.data.message || "Error al asignar club.", tipo: "error" };
+        const res = await saveEvaluacion(sendPayload);
+        if (res.status === 'success') {
+          this.mostrarMensaje('Evaluación guardada exitosamente', 'alert-success');
+          this.showEvalModal = false;
+          const usuarioId = sessionStorage.getItem('usuarioId');
+          if (usuarioId) {
+            await registrarAuditoria({
+              id_usuario: parseInt(usuarioId),
+              accion: 'Insertar',
+              descripcion: `Se evaluó al estudiante ${f.nombre_estudiante}`
+            });
+          }
+          if (!this.evaluados.includes(f.nombre_estudiante)) this.evaluados.push(f.nombre_estudiante);
         }
-      } catch (err) {
-        console.error("Error asignando club:", err);
-        this.mensaje = { texto: "Error de red al asignar club.", tipo: "error" };
-      } finally {
-        this.assigning = false;
-        setTimeout(() => (this.mensaje.texto = ""), 2500);
+      } catch (e) {
+        this.mostrarMensaje(e.message || 'Error al guardar evaluación', 'alert-danger');
       }
-    },
+    }
   },
   async mounted() {
     await this.cargarUsuarioActual();
-    await this.cargarClubs();
     await this.loadAsistencias();
   },
 };
 </script>
 
 <style scoped>
-.card {
-  border-radius: 12px;
-}
-.table {
-  font-size: 0.95rem;
-}
-img {
-  object-fit: cover;
-}
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
+.card { border-radius: 12px; }
+.table { font-size: 0.95rem; }
+img { object-fit: cover; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
+.fade-enter, .fade-leave-to { opacity: 0; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1040; }
+.modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index: 1050; }
 </style>
