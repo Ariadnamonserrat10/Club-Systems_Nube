@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <!-- Lista por Clubs (Estilo Constancias) -->
+    <!-- Lista por Clubs -->
     <div
       v-for="club in sortedClubs"
       :key="club.id"
@@ -128,34 +128,35 @@
     <div v-if="previewData" class="print-preview">
       <div class="preview-documento">
         <div class="page" id="constancia">
-          <!-- ... (Mismo contenido de plantilla que antes) ... -->
           <table class="header-table">
-            <tr>
-              <td class="logo-cell" rowspan="3">
-                <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 80px; height: auto" />
-              </td>
-              <td class="title-cell">
-                Formato para el Registro de Participantes de<br />
-                Actividades Culturales y/o Deportivas
-              </td>
-              <td class="meta-cell">
-                <span><strong>Código:</strong> TecNM-VI-PO-003-01</span>
-              </td>
-            </tr>
-            <tr>
-              <td class="title-cell" style="font-size:9pt; font-weight:normal;">
-                Referencia a la Norma ISO 9001:2015: 8.1, 8.2.1, 8.2.2
-              </td>
-              <td class="meta-cell">
-                <span><strong>Revisión:</strong> 0</span>
-              </td>
-            </tr>
-            <tr>
-              <td></td>
-              <td class="meta-cell">
-                <span><strong>Página</strong> 1 <strong>de</strong> 1</span>
-              </td>
-            </tr>
+            <tbody>
+              <tr>
+                <td class="logo-cell" rowspan="3">
+                  <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 80px; height: auto" />
+                </td>
+                <td class="title-cell">
+                  Formato para el Registro de Participantes de<br />
+                  Actividades Culturales y/o Deportivas
+                </td>
+                <td class="meta-cell">
+                  <span><strong>Código:</strong> TecNM-VI-PO-003-01</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="title-cell" style="font-size:9pt; font-weight:normal;">
+                  Referencia a la Norma ISO 9001:2015: 8.1, 8.2.1, 8.2.2
+                </td>
+                <td class="meta-cell">
+                  <span><strong>Revisión:</strong> 0</span>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="meta-cell">
+                  <span><strong>Página</strong> 1 <strong>de</strong> 1</span>
+                </td>
+              </tr>
+            </tbody>
           </table>
 
           <div class="datos">
@@ -269,7 +270,11 @@ export default {
   computed: {
     sortedClubs() {
       if (!this.clubs) return [];
-      return [...this.clubs].sort((a, b) => a.nombre.localeCompare(b.nombre));
+      const tipoOrden = { 'DEPORTIVO': 1, 'CULTURAL': 2 };
+      return [...this.clubs].sort((a, b) => {
+        const diff = (tipoOrden[a.tipo] || 3) - (tipoOrden[b.tipo] || 3);
+        return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+      });
     },
     fechaHoy() {
       const ahora = new Date();
@@ -279,6 +284,13 @@ export default {
   },
   methods: {
     async loadAllData() {
+      // Inicializar todos los clubs como colapsados primero
+      for (const club of this.clubs) {
+        if (club.id) {
+          this.collapsedClubs[club.id] = true;
+        }
+      }
+      
       for (const club of this.clubs) {
         if (!club.id) continue;
         try {
@@ -297,11 +309,6 @@ export default {
           });
           
           this.evaluadosPorClub[club.nombre] = evaluados;
-          
-          // Por defecto colapsados si no están ya en el estado
-          if (this.collapsedClubs[club.id] === undefined) {
-            this.collapsedClubs[club.id] = true;
-          }
         } catch (e) {
           console.error(`Error club ${club.nombre}:`, e);
         }
@@ -469,4 +476,147 @@ export default {
 .print-preview { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; z-index: 2000; padding: 20px; overflow-y: auto; }
 .preview-documento { flex: 1; display: flex; justify-content: center; }
 .acciones-preview { width: 300px; background: #f8f9fa; padding: 20px; border-radius: 8px; height: fit-content; margin-left: 20px; }
+
+.text-primary { color: #2d3561 !important; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-2 { margin-top: 0.5rem; }
+
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.2s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.card-header {
+  padding: 12px 16px;
+  font-weight: 600;
+}
+.bg-primary { background: #2d3561 !important; }
+.bg-secondary { background: #5865a8 !important; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.table thead {
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+.table th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+.table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.table tbody tr {
+  transition: background 0.15s ease;
+}
+.table tbody tr:hover {
+  background: #f8f9ff;
+}
+
+.table-hover tbody tr:hover {
+  background: #f8f9ff;
+}
+
+.badge {
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.bg-success { background: #28a745 !important; }
+.bg-danger { background: #dc3545 !important; }
+.bg-info { background: #17a2b8 !important; color: #fff; }
+.bg-secondary { background: #6c757d !important; }
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+.btn-light {
+  background: #fff;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+.btn-light:hover {
+  background: #f8f9fa;
+  color: #2d3561;
+}
+.btn-outline-info {
+  background: transparent;
+  color: #17a2b8;
+  border: 1px solid #17a2b8;
+}
+.btn-outline-info:hover {
+  background: #17a2b8;
+  color: #fff;
+}
+
+.form-control {
+  padding: 10px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-control:focus {
+  outline: none;
+  border-color: #2d3561;
+  box-shadow: 0 0 0 3px rgba(45, 53, 97, 0.1);
+}
+
+.list-group {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.list-group-item {
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.list-group-item:hover {
+  background: #f8f9ff;
+}
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.text-muted {
+  color: #6c757d;
+}
+.fw-bold {
+  font-weight: 600;
+}
 </style>

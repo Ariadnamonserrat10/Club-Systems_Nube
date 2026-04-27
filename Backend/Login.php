@@ -4,6 +4,36 @@ header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
 require_once __DIR__ . "/validation.php";
+
+session_start();
+
+function checkRateLimit($usuario, $maxAttempts = 5, $windowSeconds = 300) {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $key = "rate_{$ip}_{$usuario}";
+    $now = time();
+    
+    if (!isset($_SESSION[$key])) {
+        $_SESSION[$key] = ['count' => 0, 'reset' => $now + $windowSeconds];
+    }
+    
+    if ($now > $_SESSION[$key]['reset']) {
+        $_SESSION[$key] = ['count' => 0, 'reset' => $now + $windowSeconds];
+    }
+    
+    $_SESSION[$key]['count']++;
+    return $_SESSION[$key]['count'] <= $maxAttempts;
+}
+
+function constantTimeResponse($success) {
+    $fakeHash = '$2y$10$FakeHashForTimingPreventionXXXXXXXX';
+    if ($success) {
+        echo json_encode(["status" => "success", "fake" => $fakeHash]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Credenciales inválidas", "fake" => $fakeHash]);
+    }
+    exit;
+}
+
 $rawBody = file_get_contents("php://input");
 $data = json_decode($rawBody, true);
 
@@ -20,6 +50,12 @@ $userType = trim($data["userType"] ?? "");
 if ($usuario === '' || $password === '') {
   http_response_code(422);
   echo json_encode(["status" => "error", "message" => "Usuario y contraseña requeridos"]);
+  exit;
+}
+
+if (!checkRateLimit($usuario)) {
+  http_response_code(429);
+  echo json_encode(["status" => "error", "message" => "Demasiados intentos. Intenta de nuevo en 5 minutos"]);
   exit;
 }
 
@@ -41,7 +77,6 @@ if ($userType === '') {
   exit;
 }
 
-// Seleccionar también club_asignado y nombre del club (si existe)
 $stmt = $conexion->prepare(
   "SELECT u.id, u.nombre, u.apellidoP, u.apellidoM, u.tipo, u.foto, u.password, u.club_asignado, c.nombre AS club_nombre
    FROM usuarios u
@@ -50,7 +85,7 @@ $stmt = $conexion->prepare(
 );
 if (!$stmt) {
   http_response_code(500);
-  echo json_encode(["status" => "error", "message" => "Error en BD: " . $conexion->error]);
+  echo json_encode(["status" => "error", "message" => "Error en el sistema"]);
   exit;
 }
 
@@ -60,23 +95,21 @@ $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
   http_response_code(401);
-  echo json_encode(["status" => "error", "message" => "El usuario no existe"]);
-  exit;
+  constantTimeResponse(false);
 }
 
 $user = $result->fetch_assoc();
 
-if (!password_verify($password, $user['password'])) {
+$passwordHash = $user['password'] ?? '';
+
+if (!password_verify($password, $passwordHash)) {
   http_response_code(401);
-  echo json_encode(["status" => "error", "message" => "La contraseña es incorrecta"]);
-  exit;
+  constantTimeResponse(false);
 }
 
-// Validar que el tipo de usuario seleccionado coincida con el tipo en la BD
 $userTypeDB = strtoupper($user['tipo']);
 $userTypeSelected = strtoupper($userType);
 
-// Mapear valores: "oficina" -> "OFICINA", "monitor" -> "MONITOR"
 if ($userTypeSelected === "OFICINA") {
   $userTypeSelected = "OFICINA";
 } elseif ($userTypeSelected === "MONITOR") {

@@ -1,214 +1,148 @@
 <template>
-  <div>
-    <h3>Alumnos sin registrar (formularios)</h3>
+  <div class="alumnos-sr-container">
+    <h3 class="title">Alumnos sin registrar</h3>
 
-    <div class="d-flex justify-content-between align-items-center my-3">
-      <div>
-        <button class="btn btn-primary me-2" @click="simularImport">Importar (simulación Google Forms)</button>
-        <button class="btn btn-success" @click="openAddModal">Agregar manual</button>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn-import" @click="triggerCSV">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+          </svg>
+          Importar CSV
+        </button>
+        <input type="file" ref="csvInput" style="display: none" accept=".csv" @change="handleCSVUpload" />
       </div>
-      <div>
-        <small class="text-muted">Los registros muestran 3 opciones de club propuestas.</small>
+      <div class="toolbar-right">
+        <span class="text-hint">Los registros muestran 3 opciones de club propuestas</span>
       </div>
     </div>
 
-    <div v-if="unregistered.length === 0" class="text-muted">No hay alumnos sin registrar.</div>
+    <div v-if="!unregistered || unregistered.length === 0" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="#cbd5e1">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      </svg>
+      <p>No hay alumnos sin registrar</p>
+    </div>
 
-    <table v-if="unregistered.length" class="table table-bordered table-striped align-middle">
-      <thead class="table-primary">
-        <tr>
-          <th>Nombre</th>
-          <th>No. Control</th>
-          <th>Teléfono</th>
-          <th>Opciones de club</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(u, idx) in unregistered" :key="u.control + idx">
-          <td>{{ u.nombre }} {{ u.apellidoP }} {{ u.apellidoM }}</td>
-          <td>{{ u.control }}</td>
-          <td>{{ u.telefono }}</td>
-          <td>
-            <div class="d-flex gap-2">
-              <button v-for="(opt, oIndex) in u.opciones" :key="oIndex" class="btn btn-outline-secondary btn-sm" disabled>{{ opt }}</button>
-            </div>
-          </td>
-          <td>
-            <div class="d-flex gap-2">
-              <button class="btn btn-success btn-sm" @click="assignToClub(idx, u.opciones[0])">Asignar 1</button>
-              <button class="btn btn-success btn-sm" @click="assignToClub(idx, u.opciones[1])">Asignar 2</button>
-              <button class="btn btn-success btn-sm" @click="assignToClub(idx, u.opciones[2])">Asignar 3</button>
-              <button class="btn btn-danger btn-sm" @click="removeUnregistered(idx)">Eliminar</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Modal agregar alumno sin registrar -->
-    <div class="modal fade" id="modalAddSR" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Agregar alumno (sin registrar)</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-2">
-              <div class="col-md-4"><input v-model="form.nombre" class="form-control" placeholder="Nombre(s)" @input="soloTexto('nombre')" /></div>
-              <div class="col-md-4"><input v-model="form.apellidoP" class="form-control" placeholder="Apellido paterno" @input="soloTexto('apellidoP')" /></div>
-              <div class="col-md-4"><input v-model="form.apellidoM" class="form-control" placeholder="Apellido materno" @input="soloTexto('apellidoM')" /></div>
-              <div class="col-md-4 mt-2"><input v-model="form.control" maxlength="8" class="form-control" placeholder="Número de control (8 dígitos)" @input="soloNumeros('control')" /></div>
-              <div class="col-md-4 mt-2"><input v-model="form.telefono" class="form-control" placeholder="Teléfono" @input="soloNumeros('telefono')" /></div>
-              <div class="col-md-4 mt-2">
-                <select v-model="form.carrera" class="form-select">
-                  <option disabled value="">Selecciona carrera</option>
-                  <option>ISC</option>
-                  <option>Ingeniería Industrial</option>
-                  <option>ADMON</option>
-                  <option>Contaduría</option>
-                  <option>Arquitectura</option>
-                  <option>Derecho</option>
-                  <option>Diseño Gráfico</option>
-                </select>
+    <div v-if="unregistered && unregistered.length" class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th-nombre">Nombre</th>
+            <th class="th-control">No. Control</th>
+            <th class="th-telefono">Teléfono</th>
+            <th class="th-carrera">Carrera</th>
+            <th class="th-semestre">Semestre</th>
+            <th class="th-estado">Estado</th>
+            <th class="th-opciones">Opciones de club</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(u, idx) in unregistered" :key="u.id || idx">
+            <td class="td-nombre">{{ u.nombre }} {{ u.apellidoP }} {{ u.apellidoM }}</td>
+            <td class="td-control">{{ u.numeroControl || u.numero_control || '—' }}</td>
+            <td class="td-telefono">{{ u.telefono || '—' }}</td>
+            <td class="td-carrera">{{ u.carrera_id || '—' }}</td>
+            <td class="td-semestre">{{ u.semestre_id || '—' }}</td>
+            <td class="td-estado">
+              <span :class="['badge-estado', getBadgeClass(u.estado)]">
+                {{ u.estado || 'PENDIENTE' }}
+              </span>
+            </td>
+            <td class="td-opciones">
+              <div class="opciones-list">
+                <span v-if="u.opciones && u.opciones.length" v-for="(opt, oIndex) in u.opciones.slice(0,3)" :key="oIndex" class="badge-opcion">
+                  {{ oIndex + 1 }}. {{ opt }}
+                </span>
+                <span v-else class="text-muted">—</span>
               </div>
-
-              <!-- Opciones de clubs (3) -->
-              <div class="col-12 mt-2">
-                <label class="form-label">Opciones de club (3)</label>
-                <div class="row g-2">
-                  <div class="col-md-4"><select v-model="form.opciones[0]" class="form-select"><option disabled value="">Opción 1</option><option v-for="c in clubs" :key="c.nombre">{{ c.nombre }}</option></select></div>
-                  <div class="col-md-4"><select v-model="form.opciones[1]" class="form-select"><option disabled value="">Opción 2</option><option v-for="c in clubs" :key="c.nombre+'2'">{{ c.nombre }}</option></select></div>
-                  <div class="col-md-4"><select v-model="form.opciones[2]" class="form-select"><option disabled value="">Opción 3</option><option v-for="c in clubs" :key="c.nombre+'3'">{{ c.nombre }}</option></select></div>
-                </div>
+            </td>
+            <td class="td-acciones">
+              <div class="acciones-botones">
+                <template v-if="!u.estado || u.estado === 'PENDIENTE'">
+                  <button v-if="u.opciones && u.opciones[0]" class="btn-asignar" @click="assignToClub(u, 0)">Asignar 1</button>
+                  <button v-if="u.opciones && u.opciones[1]" class="btn-asignar" @click="assignToClub(u, 1)">Asignar 2</button>
+                  <button v-if="u.opciones && u.opciones[2]" class="btn-asignar" @click="assignToClub(u, 2)">Asignar 3</button>
+                </template>
+                <button class="btn-eliminar" @click="deleteRecord(u, idx)">Eliminar</button>
               </div>
-
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn btn-primary" @click="saveUnregistered">Guardar</button>
-          </div>
-        </div>
-      </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script>
-import { createAlumno } from '../services/api';
-/*
- AlumnosSR: maneja la lista de "sin registrar" que provendría de formularios externos.
- - Emite assign-alumno al padre cuando se asigna.
- - Emite import-unregistered si se importa una lista externa.
- - para la simulación se creará algunos registros de ejemplo.
-*/
 export default {
   name: 'AlumnosSR',
-  props: ['clubs'],
+  props: ['clubs', 'carreras', 'alumnos'],
   data() {
     return {
-      unregistered: [],
-
-      // formulario local para agregar manualmente
-      form: {
-        nombre: '',
-        apellidoP: '',
-        apellidoM: '',
-        control: '',
-        telefono: '',
-        carrera: '',
-        opciones: ['', '', '']
-      }
+      unregistered: [
+        { id: 1, nombre: 'Juan', apellidoP: 'Pérez', apellidoM: 'García', numeroControl: '20210001', telefono: '9511234567', carrera_id: 3, semestre_id: 3, estado: 'PENDIENTE', opciones: ['Club de Básquetbol', 'Club de Ajedrez', 'Club de Música'] },
+        { id: 2, nombre: 'Maria', apellidoP: 'López', apellidoM: 'Rodríguez', numeroControl: '20210002', telefono: '9512345678', carrera_id: 1, semestre_id: 2, estado: 'PENDIENTE', opciones: ['Club de Fútbol', 'Club de Danza'] },
+      ],
     };
   },
   methods: {
-    normalizarTexto(valor) {
-      const limpio = (valor || '')
-        .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trimStart();
-      return limpio
-        .split(' ')
-        .map(p => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
-        .join(' ')
-        .trimEnd();
+    getBadgeClass(estado) {
+      if (estado === 'APROBADO') return 'aprobado';
+      if (estado === 'RECHAZADO') return 'rechazado';
+      return 'pendiente';
     },
-    // simula import desde Google Forms (ejemplo)
-    simularImport() {
-      const sample = [
-        { nombre: 'Pedro', apellidoP: 'Gómez', apellidoM: 'Sánchez', control: '20230001', telefono: '5512345678', carrera: 'Ingeniería en Sistemas', opciones: this.sampleOptions() },
-        { nombre: 'Lucía', apellidoP: 'Méndez', apellidoM: 'Ríos', control: '20230002', telefono: '5598765432', carrera: 'Administración', opciones: this.sampleOptions() }
-      ];
-      this.unregistered.push(...sample);
-      this.$emit('import-unregistered', this.unregistered);
-      this.$emit('log', { usuario: 'Sistema', accion: 'Insertar', tipo: 'import', descripcion: `Importados ${sample.length} registros` });
-      new bootstrap.Toast(document.getElementById('toastSuccess')).show();
+    getOpciones(u) {
+      return u.opciones || [];
     },
-
-    sampleOptions() {
-      // toma primeros 3 clubs disponibles o repite si hay menos
-      const names = this.clubs.map(c => c.nombre);
-      const out = [];
-      for (let i=0;i<3;i++) out.push(names[i % Math.max(1,names.length)] || 'Sin club');
-      return out;
+    triggerCSV() {
+      this.$refs.csvInput.click();
     },
-
-    openAddModal() {
-      this.form = { nombre: '', apellidoP: '', apellidoM: '', control: '', telefono: '', carrera: '', opciones: ['', '', ''] };
-      new bootstrap.Modal(document.getElementById('modalAddSR')).show();
+    handleCSVUpload(event) {
+      console.log('CSV upload:', event.target.files);
     },
-
-    saveUnregistered() {
-      if (!this.form.nombre || !/^\d{8}$/.test(this.form.control) || !/^\d+$/.test(this.form.telefono) || !this.form.opciones[0]) {
-        return this.$root.showError ? this.$root.showError('Verifique los campos (control 8 dígitos, teléfono numérico, al menos 1 opción de club)') : null;
-      }
-      this.unregistered.push({ ...this.form });
-      this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Insertar', tipo: 'alumno_sin_registrar', descripcion: `Se agregó ${this.form.nombre}` });
-      bootstrap.Modal.getInstance(document.getElementById('modalAddSR')).hide();
-      new bootstrap.Toast(document.getElementById('toastSuccess')).show();
+    assignToClub(alumno, optIndex) {
+      console.log('Assign:', alumno, optIndex);
     },
-
-    soloNumeros(campo) {
-      this.form[campo] = this.form[campo].replace(/\D/g, '');
-    },
-    soloTexto(campo) {
-      this.form[campo] = this.normalizarTexto(this.form[campo]);
-    },
-
-    async assignToClub(index, clubName) {
-      const alumno = this.unregistered[index];
-      if (!clubName) return this.$root.showError('Club inválido');
-      try {
-        // map clubName to id if available
-        const clubObj = Array.isArray(this.clubs) ? this.clubs.find(c => c.nombre === clubName) : null;
-        const id_club = clubObj && clubObj.id ? clubObj.id : null;
-        const payload = {
-          nombre: alumno.nombre,
-          apellidoP: alumno.apellidoP,
-          apellidoM: alumno.apellidoM,
-          numeroControl: alumno.control,
-          telefono: alumno.telefono || null,
-          carrera_id: null,
-          semestre_id: null,
-          id_club,
-        };
-        await createAlumno(payload);
-        // solo si el backend responde OK, actualizar UI local y notificar al padre para lista registrada
-        this.$emit('assign-alumno', { alumnoIndex: index, clubNombre: clubName });
-        this.unregistered.splice(index, 1);
-        if (this.$root.showToast) this.$root.showToast(`Alumno registrado y asignado a ${clubName}`);
-      } catch (e) {
-        if (this.$root.showError) this.$root.showError(e.message || 'Error al asignar alumno');
-      }
-    },
-
-    removeUnregistered(index) {
+    deleteRecord(alumno, index) {
       this.unregistered.splice(index, 1);
-      this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Eliminar', tipo: 'alumno_sin_registrar', descripcion: `Registro eliminado` });
-      new bootstrap.Toast(document.getElementById('toastSuccess')).show();
-    }
-  }
+    },
+  },
 };
 </script>
+
+<style scoped>
+.alumnos-sr-container { padding: 20px; }
+.title { color: #2d3561; font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; text-align: center; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.toolbar-left { display: flex; gap: 12px; }
+.toolbar-right { display: flex; align-items: center; }
+.text-hint { font-size: 0.85rem; color: #6c757d; }
+.btn-import { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: #17a2b8; border: none; color: white; border-radius: 8px; font-weight: 500; cursor: pointer; }
+.btn-import:hover { background: #138496; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.empty-state p { margin-top: 16px; color: #6c757d; font-size: 1rem; }
+.table-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.table thead { background: #f8f9fa; }
+.table th { padding: 14px 12px; text-align: left; font-weight: 600; color: #495057; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; border-bottom: 2px solid #dee2e6; }
+.table td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; }
+.table tbody tr:hover { background: #f8f9ff; }
+.th-nombre { min-width: 180px; }
+.th-control, .th-telefono, .th-carrera, .th-semestre, .th-estado, .th-opciones, .th-acciones { min-width: 80px; }
+.td-nombre { font-weight: 500; color: #333; }
+.td-control, .td-telefono, .td-carrera, .td-semestre { color: #555; }
+.badge-estado { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.aprobado { background: #d4edda; color: #155724; }
+.rechazado { background: #f8d7da; color: #721c24; }
+.pendiente { background: #fff3cd; color: #856404; }
+.opciones-list { display: flex; flex-direction: column; gap: 4px; }
+.badge-opcion { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; background: #6c757d; color: white; }
+.acciones-botones { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn-asignar { padding: 6px 12px; background: #28a745; border: none; color: white; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; }
+.btn-asignar:hover { background: #218838; }
+.btn-eliminar { padding: 6px 12px; background: transparent; border: 1px solid #dc3545; color: #dc3545; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; }
+.btn-eliminar:hover { background: #dc3545; color: white; }
+.text-muted { color: #6c757d; font-size: 0.85rem; }
+</style>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h3>Constancias</h3>
+    <h3 class="text-primary mb-4">Constancias</h3>
 
     <!-- Búsqueda de alumnos -->
     <div class="mb-4">
@@ -1581,4 +1581,131 @@ export default {
     position: static;
   }
 }
+
+/* Estilos mejorados */
+.text-primary { color: #2d3561 !important; }
+
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.card-header {
+  padding: 12px 16px;
+  font-weight: 600;
+}
+.bg-primary { background: #2d3561 !important; }
+.bg-secondary { background: #5865a8 !important; }
+.bg-success { background: #28a745 !important; }
+.bg-danger { background: #dc3545 !important; }
+.bg-info { background: #17a2b8 !important; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.table thead {
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+.table th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+.table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.table tbody tr {
+  transition: background 0.15s ease;
+}
+.table tbody tr:hover {
+  background: #f8f9ff;
+}
+.table-bordered th, .table-bordered td {
+  border: 1px solid #dee2e6;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+.btn-light {
+  background: #fff;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+.btn-light:hover {
+  background: #f8f9fa;
+  color: #2d3561;
+}
+.btn-success {
+  background: #28a745;
+  color: #fff;
+}
+.btn-info {
+  background: #17a2b8;
+  color: #fff;
+}
+
+.form-control {
+  padding: 10px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-control:focus {
+  outline: none;
+  border-color: #2d3561;
+  box-shadow: 0 0 0 3px rgba(45, 53, 97, 0.1);
+}
+
+.list-group {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.list-group-item {
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.list-group-item:hover {
+  background: #f8f9ff;
+}
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.text-muted { color: #6c757d; }
+.fw-bold { font-weight: 600; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-2 { margin-top: 0.5rem; }
 </style>
