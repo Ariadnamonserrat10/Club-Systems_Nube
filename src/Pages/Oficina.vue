@@ -17,87 +17,34 @@
           <small class="text-light">Perfil: {{ usuarioActual.tipo }}</small>
         </div>
 
-        <!-- Menú -->
+<!-- Menú -->
         <ul class="nav flex-column mt-4">
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('Gestion')"
-              >Gestionar usuarios</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('Gestion')">Gestionar usuarios</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('ClubsR')"
-              >Clubs registrados</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('ClubsR')">Clubs registrados</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('AlumnosSR')"
-              >Alumnos sin registrar</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('AlumnosSR')">Alumnos sin registrar</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('AlumnosR')"
-              >Alumnos registrados</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('AlumnosR')">Alumnos registrados</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('Listas')"
-              >Listas de clubs</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('Evaluaciones')">Evaluaciones</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('Periodos')"
-              >Periodos</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('Periodos')">Periodos</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('Reinscripciones')"
-              >Reinscripciones</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('Reinscripciones')">Reinscripciones</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('Constancias')"
-              >Constancias</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('Constancias')">Constancias</a>
           </li>
-
           <li class="nav-item">
-            <a
-              href="#"
-              class="nav-link text-white"
-              @click.prevent="setView('Auditoria')"
-              >Auditoría</a
-            >
+            <a href="#" class="nav-link text-white" @click.prevent="setView('Auditoria')">Auditoría</a>
           </li>
         </ul>
       </div>
@@ -119,6 +66,7 @@
         :fechas="fechas"
         :auditoria="auditoria"
         :carreras="carreras"
+        :periodoActivo="periodoActivo"
         @add-club="handleAddClub"
         @edit-club="handleEditClub"
         @delete-club="handleDeleteClub"
@@ -134,6 +82,7 @@
         @request-reload-alumnos="loadAlumnos"
         @show-error="showError"
         @show-toast="showToast"
+        @navigate="setView"
       />
     </div>
 
@@ -159,12 +108,13 @@
 */
 
 import Gestion from "../components/Gestion.vue";
+import Dashboard from "../components/Dashboard.vue";
 import ClubsR from "../components/ClubsR.vue";
 import AlumnosSR from "../components/AlumnosSR.vue";
 import AlumnosR from "../components/AlumnosR.vue";
 import Constancias from "../components/Constancias.vue";
 import Auditoria from "../components/Auditoria.vue";
-import Listas from "../components/Listas.vue";
+import Evaluaciones from "../components/Evaluaciones.vue";
 import Periodos from "../components/Periodos.vue";
 import Reinscripciones from "../components/Reinscripciones.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
@@ -175,15 +125,17 @@ export default {
   name: "Oficina",
   components: {
     Gestion,
+    Dashboard,
     ClubsR,
     AlumnosSR,
     AlumnosR,
     Constancias,
     Auditoria,
-    Listas,
+    Evaluaciones,
     Periodos,
     Reinscripciones,
   },
+  emits: ["navigate"],
   data() {
     return {
      usuarioActual: {
@@ -193,8 +145,9 @@ export default {
        tipo: "",
        foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png", // fallback
      },
-      currentView: "ClubsR",
-      clubs: [], // se cargará desde API más adelante
+      currentView: "Dashboard",
+      clubs: [],
+      periodoActivo: null,
 
       carreras: [
         { id: 1, nombre: 'Ingeniería Civil' },
@@ -243,10 +196,10 @@ export default {
       auditoria: [
         {
           fecha: new Date().toLocaleString(),
-          usuario: "admin",
-          accion: "Inicializar",
+          usuario: "Sistema",
+          accion: "INICIAR",
           tipo: "sistema",
-          descripcion: "Datos iniciales cargados",
+          descripcion: "Sesión iniciada",
         },
       ],
 
@@ -354,6 +307,17 @@ export default {
     // Refresco manual de clubs sin disparar la cadena completa de mounted()
     async refreshClubs() {
       await this.loadClubs();
+    },
+
+    async cargarPeriodoActivo() {
+      try {
+        const res = await axios.get(`${BACKEND}/Periodos.php?action=activo`);
+        if (res.data.status === 'success' && res.data.data) {
+          this.periodoActivo = res.data.data;
+        }
+      } catch (error) {
+        console.error("Error cargando período activo:", error);
+      }
     },
 
     async loadAlumnos() {
@@ -667,14 +631,31 @@ export default {
     },
 
     // auditoría helper
-    logAction(usuario, accion, tipo, descripcion) {
-      this.auditoria.unshift({
+    async logAction(usuario, accion, tipo, descripcion) {
+      const entry = {
         fecha: new Date().toLocaleString(),
         usuario,
         accion,
         tipo,
         descripcion,
-      });
+      };
+      
+      // Guardar localmente
+      this.auditoria.unshift(entry);
+      
+      // Enviar al backend
+      try {
+        const usuarioId = sessionStorage.getItem("usuarioId");
+        await axios.post(`${BACKEND}/auditoria.php`, {
+          id_usuario: usuarioId ? parseInt(usuarioId) : null,
+          usuario: usuario,
+          accion: accion.toUpperCase(),
+          tipo: tipo,
+          descripcion: descripcion
+        });
+      } catch (error) {
+        console.error("Error guardando auditoría:", error);
+      }
     },
 
     // mensajes
@@ -734,6 +715,7 @@ export default {
   await this.cargarUsuarioActual();
   await this.loadClubs();
   await this.loadAlumnos();
+  await this.cargarPeriodoActivo();
 },
 };
 </script>

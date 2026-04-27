@@ -45,6 +45,9 @@ const UPLOAD = `${BACKEND}/upload.php`;
 const MONITORES = `${BACKEND}/getMonitores.php`;
 const ASIGNAR = `${BACKEND}/asignarMonitor.php`;
 const EVALUACION = `${BACKEND}/evaluacion.php`;
+const SAVE_EVALUACION = `${BACKEND}/saveEvaluacion.php`;
+const GET_EVALUADOS = `${BACKEND}/getEvaluatedStudents.php`;
+const AUDITORIA = `${BACKEND}/auditoria.php`;
 const FIRMAS = `${BACKEND}/firmas.php`;
 const CONFIG = `${BACKEND}/config.php`;
 
@@ -196,6 +199,26 @@ export const createAlumno = (payload) =>
 export const updateAlumno = (id, payload) =>
   request(`${ALUMNOS}?id=${id}`, {
     method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+// ================= EVALUACIONES & AUDITORIA =================
+export const saveEvaluacion = (payload) =>
+  request(SAVE_EVALUACION, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+export const getEvaluatedStudents = async (clubName) => {
+  const data = await request(`${GET_EVALUADOS}?club_name=${encodeURIComponent(clubName)}`);
+  return Array.isArray(data?.data) ? data.data : [];
+};
+
+export const registrarAuditoria = (payload) =>
+  request(AUDITORIA, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });

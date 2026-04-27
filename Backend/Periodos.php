@@ -1,6 +1,6 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=utf-8");
 
@@ -155,6 +155,27 @@ try {
 
             echo json_encode(['status' => 'success', 'id' => $pdo->lastInsertId()]);
         }
+    } elseif ($method === 'PUT') {
+        // Actualizar período
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if ($id <= 0) {
+            throw new Exception("ID de período inválido");
+        }
+        
+        $data = json_decode(file_get_contents("php://input"), true);
+        $nombre = $data['nombre'] ?? '';
+        $fecha_inicio = $data['fecha_inicio'] ?? '';
+        $fecha_fin = $data['fecha_fin'] ?? '';
+        $ya_editado = isset($data['ya_editado']) ? (int)$data['ya_editado'] : 0;
+        
+        if (!$nombre || !$fecha_inicio || !$fecha_fin) {
+            throw new Exception("Faltan campos obligatorios");
+        }
+        
+        $stmt = $pdo->prepare("UPDATE periodos SET nombre = ?, fecha_inicio = ?, fecha_fin = ?, ya_editado = ? WHERE id = ?");
+        $stmt->execute([$nombre, $fecha_inicio, $fecha_fin, $ya_editado, $id]);
+        
+        echo json_encode(['status' => 'success', 'message' => 'Período atualizado']);
     }
 } catch (Exception $e) {
     http_response_code(500);
