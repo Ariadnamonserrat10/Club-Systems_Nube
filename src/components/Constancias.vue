@@ -206,41 +206,49 @@
     <div v-if="previewData" class="print-preview">
       <div class="preview-documento">
         <div class="constancia A4" id="constancia">
-          <!-- ENCABEZADO EN TEXTO (evita depender de imagen con celdas vacías) -->
+
+          <!-- ENCABEZADO CORREGIDO según imagen oficial -->
           <table
-            class="tabla-encabezado"
-            cellpadding="8"
+            cellpadding="0"
             cellspacing="0"
-            style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9pt"
+            style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9pt; border: 1px solid #000;"
           >
             <tbody>
+              <!-- Fila 1: Logo | Título principal | Código -->
               <tr>
-                <td rowspan="2" style="border: 1px solid #000; width: 95px; text-align: center; vertical-align: middle;">
-                  <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 75px; height: auto" />
+                <td
+                  rowspan="3"
+                  style="border: 1px solid #000; width: 90px; text-align: center; vertical-align: middle; padding: 6px;"
+                >
+                  <img src="../Img/Logo.jpg" alt="Logo" style="max-width: 75px; height: auto;" />
                 </td>
-                <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 11pt; line-height: 1.1;">
-                  Formato&nbsp;&nbsp;&nbsp; para&nbsp;&nbsp;&nbsp; el&nbsp;&nbsp;&nbsp; Registro&nbsp;&nbsp;&nbsp; de&nbsp;&nbsp;&nbsp; Participantes&nbsp;&nbsp;&nbsp; de<br>
-                  Actividades Culturales y/o Deportivas
+                <td
+                  rowspan="2"
+                  style="border: 1px solid #000; vertical-align: middle; padding: 6px 10px; font-weight: bold; font-size: 10pt; line-height: 1.4;"
+                >
+                  Constancia de cumplimiento de actividad Cultural y/o Deportiva
                 </td>
-                <td rowspan="2" style="border: 1px solid #000; width: 32%; vertical-align: top; padding: 0;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
-                    <tbody>
-                      <tr>
-                        <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Código:TecNM-VI-PO-003-01</strong></td>
-                      </tr>
-                      <tr>
-                        <td style="border-bottom: 1px solid #000; padding: 6px;"><strong>Revisión: 0</strong></td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px;"><strong>Página 1 de 1</strong></td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <td
+                  style="border: 1px solid #000; padding: 5px 8px; font-weight: bold; font-size: 9pt; white-space: nowrap; width: 220px;"
+                >
+                  Código:TecNM-VI-PO-003-05
                 </td>
               </tr>
+              <!-- Fila 2: Revisión -->
               <tr>
-                <td style="border: 1px solid #000; vertical-align: middle; font-weight: bold; font-size: 10pt;">
-                  Referencia a la Norma ISO 9001:2015: 8.1,&nbsp; 8.2.1,&nbsp; 8.2.2
+                <td style="border: 1px solid #000; padding: 5px 8px; font-weight: bold; font-size: 9pt;">
+                  Revisión: 0
+                </td>
+              </tr>
+              <!-- Fila 3: Referencia ISO | Página -->
+              <tr>
+                <td
+                  style="border: 1px solid #000; vertical-align: middle; padding: 5px 10px; font-weight: bold; font-size: 9pt;"
+                >
+                  Referencia a la Norma ISO 9001:2015&nbsp;&nbsp;&nbsp;8.1
+                </td>
+                <td style="border: 1px solid #000; padding: 5px 8px; font-weight: bold; font-size: 9pt;">
+                  Página 1 de 1
                 </td>
               </tr>
             </tbody>
@@ -248,7 +256,7 @@
 
           <h2
             class="titulo-constancia"
-            style="font-size: 11pt; margin: 90px 0 15px 0">
+            style="font-size: 11pt; margin: 30px 0 15px 0; text-align: center;">
             CONSTANCIA DE CUMPLIMIENTO DE ACTIVIDAD CULTURAL Y/O DEPORTIVA
           </h2>
           <div class="espacios-mediano"></div>
@@ -1338,7 +1346,7 @@ export default {
   text-align: center;
   font-size: 12pt;
   font-weight: bold;
-  margin: 50px 0 15px 0;
+  margin: 30px 0 15px 0;
 }
 
 .espacios {
