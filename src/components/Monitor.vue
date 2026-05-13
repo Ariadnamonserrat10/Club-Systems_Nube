@@ -1,5 +1,6 @@
 <template>
-  <div class="d-flex flex-column bg-light vh-100 p-4">
+  <div class="monitor-wrapper">
+    <div class="d-flex flex-column monitor-background p-4 min-vh-100">
     <!-- PERFIL DEL MONITOR -->
     <div class="card shadow-sm p-3 mb-3 bg-white d-flex flex-row align-items-center">
       <img
@@ -56,14 +57,15 @@
         </div>
       </div>
 
+
       <!-- TABLA DE ASISTENCIAS SIEMPRE VISIBLE PARA MOSTRAR FECHAS -->
       <table class="table table-hover align-middle">
-        <thead class="table-primary text-center">
+        <thead class="text-center" style="background-color: #080A4C; color: white;">
           <tr>
-            <th>Nombre</th>
-            <th v-for="fecha in fechasData" :key="fecha">{{ fecha }}</th>
-            <th>Acreditado</th>
-            <th>Evaluación</th>
+            <th class="text-white">Nombre</th>
+            <th v-for="fecha in fechasData" :key="fecha" class="text-white">{{ fecha }}</th>
+            <th class="text-white">Acreditado</th>
+            <th class="text-white">Evaluación</th>
           </tr>
         </thead>
         <tbody>
@@ -113,7 +115,7 @@
     <div v-if="showEvalModal" class="modal d-block" tabindex="-1">
       <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-          <div class="modal-header bg-primary text-white">
+          <div class="modal-header text-white" style="background-color: #080A4C;">
             <h5 class="modal-title">Evaluación de Desempeño</h5>
             <button type="button" class="btn-close btn-close-white" @click="closeEvalModal"></button>
           </div>
@@ -218,6 +220,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -523,259 +526,57 @@ export default {
 </script>
 
 <style scoped>
-.monitor-container {
-  background: #f5f6fa;
+.monitor-wrapper {
+  background-color: #080A4C;
   min-height: 100vh;
-  padding: 20px;
-}
-
-.monitor-profile-card {
-  background: white;
-  border-radius: 16px;
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  margin-bottom: 20px;
-}
-
-.profile-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.profile-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #2d3561;
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.profile-title {
-  color: #2d3561;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 4px 0;
-}
-
-.profile-name {
-  color: #333;
-  font-size: 1rem;
-  font-weight: 500;
-  margin: 0 0 4px 0;
-}
-
-.profile-club {
   margin: 0;
-  font-size: 0.875rem;
-}
-
-.club-label {
-  color: #6c757d;
-  margin-right: 4px;
-}
-
-.club-name {
-  color: #28a745;
-  font-weight: 600;
-}
-
-.club-none {
-  color: #dc3545;
-}
-
-.btn-logout {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: transparent;
-  border: 2px solid #dc3545;
-  color: #dc3545;
-  border-radius: 10px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-logout:hover {
-  background: #dc3545;
-  color: white;
-}
-
-.alert-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 14px 20px;
-  border-radius: 10px;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 2000;
-  animation: slideIn 0.3s ease;
-}
-
-.alert-success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.alert-danger {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.asistencias-card {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-}
-
-.card-header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.section-title {
-  color: #2d3561;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.fecha-input-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.input-label {
-  font-size: 0.875rem;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.input-row {
-  display: flex;
-  gap: 10px;
-}
-
-.form-input {
-  padding: 10px 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.9rem;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #2d3561;
-}
-
-.btn-agregar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  background: #28a745;
-  border: none;
-  color: white;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-agregar:hover {
-  background: #218838;
-  transform: translateY(-1px);
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-.table-asistencias {
+  padding: 0;
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
 }
-
-.table-asistencias thead {
-  background: #f8f9fa;
+.monitor-background {
+  background: linear-gradient(180deg, #080A4C 0%, #050630 100%);
+  color: #eef1ff;
+  min-height: 100vh;
+  width: 100%;
 }
-
-.table-asistencias th {
-  padding: 14px 12px;
-  text-align: left;
-  font-weight: 600;
-  color: #495057;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #dee2e6;
+.monitor-background .card {
+  background: rgba(255,255,255,0.96);
+  border: none;
+  border-radius: 16px;
 }
-
-.table-asistencias td {
-  padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
+.monitor-background .text-secondary,
+.monitor-background .text-muted,
+.monitor-background .form-label,
+.monitor-background .badge,
+.monitor-background .table td {
+  color: #1f2d5c !important;
 }
-
-.table-asistencias tbody tr:hover {
-  background: #f8f9ff;
+.text-primary {
+  color: #080A4C !important;
 }
-
-.td-nombre {
-  font-weight: 500;
-  color: #333;
-}
-
-.th-nombre { min-width: 150px; }
-.th-fecha { min-width: 80px; text-align: center; }
-.th-acreditado { min-width: 100px; text-align: center; }
-.th-evaluacion { min-width: 100px; text-align: center; }
-
-.badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.bg-success { background: #28a745 !important; color: white !important; }
-.bg-danger { background: #dc3545 !important; color: white !important; }
-.bg-secondary { background: #6c757d !important; color: white !important; }
-
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 0.8rem;
-  border-radius: 6px;
-}
-
 .btn-outline-primary {
-  background: transparent;
-  border: 1px solid #2d3561;
-  color: #2d3561;
+  color: #080A4C;
+  border-color: #080A4C;
 }
-
 .btn-outline-primary:hover {
-  background: #2d3561;
+  background-color: #080A4C;
   color: white;
+}
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+.btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: white;
+}
+.table thead th {
+  color: #ffffff !important;
+  background-color: #080A4C !important;
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
