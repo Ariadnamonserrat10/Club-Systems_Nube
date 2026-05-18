@@ -184,6 +184,19 @@ export default {
   name: "Dashboard",
   props: ["clubs", "usuarios", "alumnos", "periodoActivo"],
   emits: ["navigate"],
+  methods: {
+    formatearFecha(fecha) {
+      if (!fecha) return '-';
+      let fechaObj = fecha;
+      if (typeof fecha === 'object' && fecha !== null) {
+        if (fecha.date) fechaObj = fecha.date;
+        else if (fecha.val) fechaObj = fecha.val;
+        else return '-';
+      }
+      const opts = { day: 'numeric', month: 'long', year: 'numeric' };
+      return new Date(fechaObj).toLocaleDateString('es-MX', opts);
+    },
+  },
   computed: {
     usuarioNombre() {
       const nombre = this.$parent?.usuarioActual?.nombre || "Usuario";
@@ -221,11 +234,6 @@ export default {
       const inicio = this.formatearFecha(this.periodoData.fecha_inicio);
       const fin = this.formatearFecha(this.periodoData.fecha_fin);
       return `${inicio} — ${fin}`;
-    },
-    formatearFecha(fecha) {
-      if (!fecha) return '-';
-      const opts = { day: 'numeric', month: 'long', year: 'numeric' };
-      return new Date(fecha).toLocaleDateString('es-MX', opts);
     },
     clubsOrdenados() {
       if (!this.clubs) return [];

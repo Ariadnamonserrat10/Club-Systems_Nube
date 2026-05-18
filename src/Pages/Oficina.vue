@@ -208,7 +208,13 @@ export default {
 
       toastMsg: "",
       errorMsg: "",
+      refreshInterval: null,
     };
+  },
+  beforeUnmount() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   },
   methods: {
    resolveFotoUrl(foto) {
@@ -716,6 +722,13 @@ export default {
   await this.loadClubs();
   await this.loadAlumnos();
   await this.cargarPeriodoActivo();
+  
+  // Auto-refresco cada 10 segundos (DESHABILITADO TEMPORALMENTE - causa duplicados en auditoría)
+  // this.refreshInterval = setInterval(async () => {
+  //   await this.loadClubs();
+  //   await this.loadAlumnos();
+  //   await this.cargarPeriodoActivo();
+  // }, 10000);
 },
 };
 </script>
