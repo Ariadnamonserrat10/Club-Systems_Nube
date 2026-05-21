@@ -3,7 +3,7 @@
     <div class="row g-4">
       <!-- Bienvenida -->
       <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #080A4C 0%, #050630 100%);">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #2d3561 0%, #3f4e7a 100%);">
           <div class="card-body text-white py-4">
             <h2 class="mb-1">Bienvenido, {{ usuarioNombre }}</h2>
             <p class="mb-0 opacity-75">{{ fechaActual }}</p>
@@ -21,7 +21,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="stat-icon bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#2d3561">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
               </div>
@@ -39,7 +39,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="stat-icon bg-success bg-opacity-10 rounded-circle p-3 me-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#28a745">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
@@ -57,7 +57,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="stat-icon bg-warning bg-opacity-10 rounded-circle p-3 me-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffc107">
                   <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
                 </svg>
               </div>
@@ -75,7 +75,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="stat-icon bg-danger bg-opacity-10 rounded-circle p-3 me-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#dc3545">
                   <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
                 </svg>
               </div>
@@ -243,18 +243,6 @@ export default {
         return diff !== 0 ? diff : (a.nombre || "").localeCompare(b.nombre || "");
       });
     }
-  },
-  methods: {
-    formatearFecha(fecha) {
-      if (!fecha) return '-';
-      const opts = { day: 'numeric', month: 'long', year: 'numeric' };
-      try {
-        const dateObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
-        return dateObj.toLocaleDateString('es-MX', opts);
-      } catch (e) {
-        return '-';
-      }
-    }
   }
 };
 </script>
@@ -269,9 +257,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.stat-icon svg {
-  fill: white !important;
 }
 .card {
   border-radius: 12px;
@@ -288,20 +273,6 @@ export default {
 }
 .btn:hover {
   transform: translateY(-2px);
-}
-.btn-outline-primary {
-  color: #080A4C;
-  border-color: #080A4C;
-}
-.btn-outline-primary:hover {
-  background-color: #080A4C;
-  color: white;
-}
-.text-primary {
-  color: #080A4C !important;
-}
-.bg-primary {
-  background-color: #080A4C !important;
 }
 .progress {
   border-radius: 4px;

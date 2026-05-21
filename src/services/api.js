@@ -1,5 +1,39 @@
 // src/services/api.js
 import { BACKEND } from './backend';
+import axios from 'axios';
+
+function getAuthToken() {
+  return sessionStorage.getItem('authToken');
+}
+
+function getAuthHeaders() {
+  const token = getAuthToken();
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+axios.interceptors.request.use(config => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  console.log(`[Axios] ${config.method?.toUpperCase()} ${config.url}`, { headers: config.headers });
+  return config;
+});
+
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      console.warn('[Auth] 401 recibido — limpiando sesión');
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('usuarioId');
+      sessionStorage.removeItem('usuarioNombre');
+      sessionStorage.removeItem('usuarioTipo');
+      window.location.hash = '#/';
+    }
+    return Promise.reject(error);
+  }
+);
 
 function normalizeApiErrorMessage(data) {
   const detailsArray = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
@@ -18,7 +52,8 @@ function normalizeApiErrorMessage(data) {
 }
 
 async function request(url, options = {}) {
-  const res = await fetch(url, options);
+  const headers = { ...options.headers, ...getAuthHeaders() };
+  const res = await fetch(url, { ...options, headers });
   const text = await res.text();
 
   let data;

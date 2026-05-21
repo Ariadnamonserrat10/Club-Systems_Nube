@@ -1,0 +1,26 @@
+# Backend/uploads/.htaccess — Bloquear ejecución de PHP y scripts
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+
+# Bloquear cualquier tipo de script PHP
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|phar|pl|cgi|shtml|shtm|htaccess)$">
+  Require all denied
+</FilesMatch>
+
+# Eliminar cualquier handler que pudiera ejecutar PHP
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phar .cgi .pl
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .phar .cgi .pl
+
+# Deshabilitar CGI
+Options -ExecCGI
+
+# Forzar Content-Type seguro
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Proteger este archivo
+<Files ".htaccess">
+  Require all denied
+</Files>

@@ -395,7 +395,7 @@ const copyToClipboard = async (text) => {
       class="card shadow border-0 rounded-4 bg-light p-3 w-100"
       style="max-width: 700px"
     >
-      <div class="text-center text-white py-3 rounded-3 mb-2" style="background-color: #080A4C;">
+      <div class="text-center text-white bg-primary py-3 rounded-3 mb-2">
         <i class="bi bi-person-plus-fill fs-1"></i>
         <h3 class="mt-2 mb-0">Registro de Usuario</h3>
       </div>
@@ -436,7 +436,7 @@ const copyToClipboard = async (text) => {
               type="button"
               class="btn btn-sm"
               :class="
-                userType === 'oficina' ? 'btn-navy' : 'btn-outline-navy'
+                userType === 'oficina' ? 'btn-primary' : 'btn-outline-primary'
               "
               @click="selectUserType('oficina')"
             >
@@ -446,7 +446,7 @@ const copyToClipboard = async (text) => {
               type="button"
               class="btn btn-sm"
               :class="
-                userType === 'monitor' ? 'btn-navy' : 'btn-outline-navy'
+                userType === 'monitor' ? 'btn-primary' : 'btn-outline-primary'
               "
               @click="selectUserType('monitor')"
             >
@@ -730,11 +730,10 @@ const copyToClipboard = async (text) => {
 <style scoped>
 html,
 body {
-  height: auto;
-  min-height: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
-  overflow-y: auto !important;
+  overflow-y: auto;
 }
 
 .registro-container {
@@ -742,32 +741,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 2rem 1rem;
-  background: linear-gradient(135deg, #080A4C 0%, #1a237e 100%);
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #2d3561, #5865a8);
 }
 
 .card {
   width: 100%;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
-}
-
-.btn-navy {
-  background-color: #080A4C;
-  color: white;
-}
-.btn-navy:hover {
-  background-color: #050630;
-  color: white;
-}
-.btn-outline-navy {
-  color: #080A4C;
-  border: 1px solid #080A4C;
-}
-.btn-outline-navy:hover {
-  background-color: #080A4C;
-  color: white;
+  margin-bottom: 1rem;
+  padding: 1rem;
 }
 
 .xsmall {

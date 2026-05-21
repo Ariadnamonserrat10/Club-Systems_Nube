@@ -208,6 +208,7 @@ export default {
 
         if (response.data.status === "success") {
           console.log("✅ Login exitoso! ID:", response.data.id);
+          sessionStorage.setItem("authToken", response.data.token);
           sessionStorage.setItem("usuarioId", String(response.data.id));
           sessionStorage.setItem("usuarioNombre", response.data.nombre);
           sessionStorage.setItem("usuarioTipo", response.data.tipo);
@@ -248,17 +249,18 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #0F4C81;
+  background: #1a1a2e;
 }
 
+/* === CONTENEDOR PRINCIPAL REDUCIDO, CENTRADO Y CON SOMBRA === */
 .container {
   display: flex;
-  width: 96vw;
-  max-width: 1160px;
-  min-height: 80vh;
+  width: 92vw; /* antes 100vw → reducido para centrarse con un margen equilibrado */
+  height: 95vh; /* aumenta un poco su altura pero sin forzar scroll */
   margin: auto;
-  background: transparent;
-  border-radius: 24px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25); /* sombra más visible y moderna */
   overflow: hidden;
   animation: slideIn 0.6s ease-out;
 }
@@ -266,7 +268,7 @@ body,
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(30px);
+    transform: scale(0.9) translateY(30px);
   }
   to {
     opacity: 1;
@@ -274,9 +276,10 @@ body,
   }
 }
 
+/* === PANEL IZQUIERDO === */
 .left-panel {
   flex: 1;
-  background: linear-gradient(135deg, #0F4C81 0%, #0a3b61 45%, #081f44 100%);
+  background: linear-gradient(135deg, #2d3561 0%, #3f4e7a 50%, #5865a8 100%);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -288,7 +291,7 @@ body,
 
 .geometric-shape {
   position: absolute;
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.1);
   animation: float 6s ease-in-out infinite;
 }
 
@@ -303,31 +306,31 @@ body,
 }
 
 .shape-1 {
-  width: 360px;
-  height: 360px;
-  top: -120px;
-  left: -140px;
-  border-radius: 28px;
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  left: -100px;
+  border-radius: 30px;
 }
 
 .shape-2 {
-  width: 240px;
-  height: 240px;
-  bottom: -70px;
-  right: -70px;
+  width: 200px;
+  height: 200px;
+  bottom: -50px;
+  right: -50px;
   transform: rotate(30deg);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .shape-3 {
-  width: 160px;
-  height: 160px;
-  top: 48%;
-  left: 12%;
+  width: 150px;
+  height: 150px;
+  top: 50%;
+  left: 10%;
   transform: rotate(60deg);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .left-content {
@@ -338,25 +341,25 @@ body,
 }
 
 .left-content h1 {
-  font-size: 3rem;
+  font-size: 3em;
   margin-bottom: 20px;
   font-weight: 300;
   letter-spacing: 2px;
 }
 
 .left-content p {
-  font-size: 1.15rem;
-  opacity: 0.95;
+  font-size: 1.2em;
+  opacity: 0.9;
   margin-bottom: 40px;
 }
 
 .btn-create {
   padding: 15px 40px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-radius: 32px;
-  font-size: 1.05em;
+  border: 2px solid white;
+  border-radius: 30px;
+  font-size: 1.1em;
   cursor: pointer;
   transition: all 0.3s;
   backdrop-filter: blur(10px);
@@ -366,18 +369,19 @@ body,
 
 .btn-create:hover {
   background: white;
-  color: #080A4C;
+  color: #2d3561;
   transform: translateY(-3px);
   box-shadow: 0 10px 25px rgba(255, 255, 255, 0.3);
 }
 
+/* === PANEL DERECHO === */
 .right-panel {
   flex: 1;
   padding: 60px 50px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #f4f6ff;
+  background: #f8f9fa;
 }
 
 .logo-section {
@@ -389,12 +393,12 @@ body,
   width: 80px;
   height: 80px;
   margin: 0 auto 20px;
-  background: linear-gradient(135deg, #080A4C 0%, #0a3b61 100%);
+  background: linear-gradient(135deg, #4a5f8f 0%, #5865a8 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 5px 15px rgba(15, 23, 110, 0.25);
+  box-shadow: 0 5px 15px rgba(74, 95, 143, 0.3);
 }
 
 .logo-icon svg {
@@ -404,11 +408,12 @@ body,
 }
 
 .logo-section h2 {
-  color: #080A4C;
-  font-size: 1.9em;
+  color: #2d3561;
+  font-size: 1.8em;
   margin-bottom: 10px;
 }
 
+/* === FORMULARIO === */
 .user-type-selector {
   display: flex;
   gap: 10px;
@@ -420,26 +425,26 @@ body,
   flex: 1;
   padding: 12px 20px;
   background: white;
-  border: 2px solid #d8dce9;
-  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
-  color: #5f6789;
+  color: #666;
   font-weight: 600;
   font-size: 1em;
 }
 
 .type-btn:hover {
-  border-color: #080A4C;
-  color: #080A4C;
+  border-color: #4a5f8f;
+  color: #4a5f8f;
   transform: translateY(-2px);
 }
 
 .type-btn.active {
-  background: linear-gradient(135deg, #080A4C 0%, #0a3b61 100%);
+  background: linear-gradient(135deg, #4a5f8f 0%, #5865a8 100%);
   color: white;
-  border-color: #080A4C;
-  box-shadow: 0 4px 15px rgba(15, 23, 110, 0.25);
+  border-color: #4a5f8f;
+  box-shadow: 0 4px 15px rgba(74, 95, 143, 0.3);
 }
 
 .form-group {
@@ -457,15 +462,15 @@ body,
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  fill: #080A4C;
+  fill: #4a5f8f;
   transition: all 0.3s;
 }
 
 .form-group input {
   width: 100%;
   padding: 15px 15px 15px 50px;
-  border: 2px solid #d8dce9;
-  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
   font-size: 1em;
   transition: all 0.3s;
   background: white;
@@ -473,8 +478,8 @@ body,
 
 .form-group input:focus {
   outline: none;
-  border-color: #080A4C;
-  box-shadow: 0 0 0 3px rgba(8, 10, 76, 0.15);
+  border-color: #4a5f8f;
+  box-shadow: 0 0 0 3px rgba(74, 95, 143, 0.1);
 }
 
 .forgot-password {
@@ -483,7 +488,7 @@ body,
 }
 
 .forgot-password a {
-  color: #080A4C;
+  color: #4a5f8f;
   text-decoration: none;
   font-size: 0.95em;
 }
@@ -491,53 +496,50 @@ body,
 .btn-login {
   width: 100%;
   padding: 15px;
-  background: linear-gradient(135deg, #080A4C 0%, #0a3b61 100%);
+  background: linear-gradient(135deg, #4a5f8f 0%, #5865a8 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 1.1em;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 5px 15px rgba(15, 23, 110, 0.3);
+  box-shadow: 0 5px 15px rgba(74, 95, 143, 0.3);
 }
 
 .btn-login:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(15, 23, 110, 0.4);
-}
-
-.error-message,
-.success-message {
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(74, 95, 143, 0.4);
 }
 
 .error-message {
-  background: #fdecea;
-  color: #811b29;
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
   border-left: 4px solid #f5c6cb;
 }
 
 .success-message {
-  background: #e9f7ef;
+  background: #d4edda;
   color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
   border-left: 4px solid #c3e6cb;
 }
 
+/* === RESPONSIVE === */
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
     width: 95vw;
     height: auto;
   }
-  .right-panel {
-    padding: 40px 25px;
-  }
 }
 
 .user-input {
-  color: #101f44;
+  color: #27408b;
 }
 </style>
