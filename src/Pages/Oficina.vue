@@ -4,18 +4,24 @@
     <div
       class="sidebar text-white p-3 d-flex flex-column justify-content-between"
     >
-      <div>
-        <div class="text-center mb-4">
-          <img
-            :src="resolveFotoUrl(usuarioActual.foto)"
-            alt="Usuario"
-            class="rounded-circle mb-2"
-            width="80"
-            height="80"
-          />
-          <h5 class="mb-0">{{ usuarioActual.nombre }}</h5>
-          <small class="text-light">Perfil: {{ usuarioActual.tipo }}</small>
-        </div>
+       <div>
+         <div class="text-center mb-4 profile-card-section">
+           <div class="avatar-container mb-3">
+             <template v-if="resolveFotoUrl(usuarioActual.foto)">
+               <img
+                 :src="resolveFotoUrl(usuarioActual.foto)"
+                 alt="Usuario"
+                 class="avatar-img"
+                 @error="handleImageError"
+               />
+             </template>
+             <div v-else class="avatar-fallback">
+               <span class="avatar-initials">{{ getUserInitials() }}</span>
+             </div>
+           </div>
+           <h5 class="mb-0 profile-name">{{ usuarioActual.nombre }}</h5>
+           <small class="text-light profile-role">Perfil: {{ usuarioActual.tipo }}</small>
+         </div>
 
 <!-- Menú -->
         <ul class="nav flex-column mt-4">
@@ -181,6 +187,7 @@ import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresP
 import axios from "axios";
 import jsPDF from "jspdf";
 import { BACKEND } from "../services/backend";
+import { authService } from "../services/auth";
 
 export default {
   name: "Oficina",
@@ -279,11 +286,31 @@ export default {
   },
   methods: {
    resolveFotoUrl(foto) {
-     if (!foto || typeof foto !== "string") return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-     if (foto.startsWith("blob:")) return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+     if (!foto || typeof foto !== "string") return null;
+     if (foto.startsWith("blob:")) return null;
      if (/^https?:\/\//i.test(foto)) return foto;
-     const path = foto.startsWith("/") ? foto.slice(1) : foto;
+     
+     let path = foto.startsWith("/") ? foto.slice(1) : foto;
+     
+     if (path.startsWith("Backend/")) {
+       path = path.slice(8);
+     }
+     if (path.startsWith("/")) {
+       path = path.slice(1);
+     }
+     
      return `${BACKEND}/${path}`;
+   },
+   
+   getUserInitials() {
+     const nombre = (this.usuarioActual.nombre || '').trim();
+     const apellidoP = (this.usuarioActual.apellidoP || '').trim();
+     
+     let initials = '';
+     if (nombre) initials += nombre.charAt(0).toUpperCase();
+     if (apellidoP) initials += apellidoP.charAt(0).toUpperCase();
+     
+     return initials || 'U';
    },
    async cargarUsuarioActual() {
      try {
@@ -322,10 +349,12 @@ export default {
     },
 
     cerrarSesion() {
-     sessionStorage.removeItem("usuarioId");
-     sessionStorage.removeItem("usuarioNombre");
-     sessionStorage.removeItem("usuarioTipo");
-      this.$router.push("/");
+      authService.logout('current').then(() => {
+        this.$router.push("/");
+      }).catch(() => {
+        authService.clearAuth();
+        this.$router.push("/");
+      });
     },
 
     async loadClubs() {

@@ -4,8 +4,11 @@ header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
 require_once __DIR__ . "/validation.php";
+require_once __DIR__ . "/TokenManager.php";
 
 session_start();
+
+$tokenManager = new TokenManager();
 
 function checkRateLimit($usuario, $maxAttempts = 5, $windowSeconds = 300) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -46,6 +49,7 @@ if (!$data) {
 $usuario = trim($data["usuario"] ?? "");
 $password = (string)($data["password"] ?? $data["contrasena"] ?? "");
 $userType = trim($data["userType"] ?? "");
+$rememberMe = isset($data["remember_me"]) ? (bool)$data["remember_me"] : false;
 
 if ($usuario === '' || $password === '') {
   http_response_code(422);
@@ -122,17 +126,57 @@ if ($userTypeDB !== $userTypeSelected) {
   exit;
 }
 
-echo json_encode([
-  "status" => "success",
-  "message" => "Login exitoso",
-  "id" => (int)$user['id'],
-  "nombre" => $user['nombre'],
-  "apellidoP" => $user['apellidoP'],
-  "apellidoM" => $user['apellidoM'],
-  "tipo" => $user['tipo'],
-  "foto" => $user['foto'],
-  "club_asignado" => $user['club_asignado'] !== null ? (int)$user['club_asignado'] : null,
-  "club_nombre" => $user['club_nombre'] ?? null
-]);
-?>
+$maxSessions = 5;
+$tokenManager->enforceMaximumSessions($user['id'], $maxSessions, TokenManager::TYPE_SESSION);
 
+$fingerprint = $tokenManager->generateDeviceFingerprint();
+$ip = $_SERVER['REMOTE_ADDR'] ?? null;
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
+$tokenData = $tokenManager->createToken(
+    $user['id'],
+    TokenManager::TYPE_SESSION,
+    null,
+    $ip,
+    $userAgent,
+    $fingerprint
+);
+
+$rememberToken = null;
+if ($rememberMe) {
+    $rememberData = $tokenManager->createToken(
+        $user['id'],
+        TokenManager::TYPE_REMEMBER,
+        null,
+        $ip,
+        $userAgent,
+        $fingerprint
+    );
+    $rememberToken = $rememberData['token'];
+}
+
+$csrfToken = $tokenManager->createCsrfToken($user['id']);
+
+$response = [
+    "status" => "success",
+    "message" => "Login exitoso",
+    "token" => $tokenData['token'],
+    "token_expires_at" => $tokenData['expires_at'],
+    "token_ttl_seconds" => $tokenData['ttl_seconds'],
+    "csrf_token" => $csrfToken,
+    "id" => (int)$user['id'],
+    "nombre" => $user['nombre'],
+    "apellidoP" => $user['apellidoP'],
+    "apellidoM" => $user['apellidoM'],
+    "tipo" => $user['tipo'],
+    "foto" => $user['foto'],
+    "club_asignado" => $user['club_asignado'] !== null ? (int)$user['club_asignado'] : null,
+    "club_nombre" => $user['club_nombre'] ?? null
+];
+
+if ($rememberToken !== null) {
+    $response["remember_token"] = $rememberToken;
+}
+
+echo json_encode($response);
+?>

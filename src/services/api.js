@@ -1,5 +1,5 @@
-// src/services/api.js
 import { BACKEND } from './backend';
+import { authService } from './auth';
 
 function normalizeApiErrorMessage(data) {
   const detailsArray = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
@@ -9,7 +9,6 @@ function normalizeApiErrorMessage(data) {
   if (detailsArray.length) return detailsArray.join('. ');
   if (detailsString) return detailsString;
 
-  // Evita mostrar el texto genérico "Validación" cuando el backend no envía detalle.
   if (/^validaci[oó]n$/i.test(baseMsg)) {
     return 'Los datos enviados no son válidos. Verifica texto, números y caracteres permitidos.';
   }
@@ -17,8 +16,56 @@ function normalizeApiErrorMessage(data) {
   return baseMsg || 'Error en la petición';
 }
 
+function getAuthHeaders() {
+  const headers = {};
+  const token = authService.getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+async function handleAuthError(response) {
+  if (response.status === 401) {
+    try {
+      const newToken = await authService.refreshToken();
+      return true;
+    } catch (e) {
+      authService.clearAuth();
+      if (typeof window !== 'undefined' && window.location) {
+        const hash = window.location.hash || '';
+        if (hash.includes('oficina') || hash.includes('monitor')) {
+          window.location.href = '#/';
+        }
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
 async function request(url, options = {}) {
-  const res = await fetch(url, options);
+  const finalOptions = {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      ...options.headers
+    }
+  };
+
+  let res = await fetch(url, finalOptions);
+  
+  if (res.status === 401) {
+    const retrySuccess = await handleAuthError(res);
+    if (retrySuccess && authService.getToken()) {
+      finalOptions.headers = {
+        ...getAuthHeaders(),
+        ...options.headers
+      };
+      res = await fetch(url, finalOptions);
+    }
+  }
+
   const text = await res.text();
 
   let data;
@@ -27,7 +74,6 @@ async function request(url, options = {}) {
 
   const finalMsg = normalizeApiErrorMessage(data);
 
-  // Algunos endpoints devuelven status=error con HTTP 200.
   if (!res.ok || data?.status === 'error') {
     throw new Error(finalMsg);
   }
@@ -35,7 +81,6 @@ async function request(url, options = {}) {
   return data;
 }
 
-// ================= BASE URLs =================
 const CLUBS = `${BACKEND}/Clubs.php`;
 const ALUMNOS = `${BACKEND}/Alumnos.php`;
 const CARRERAS = `${BACKEND}/carreras.php`;
@@ -51,7 +96,6 @@ const AUDITORIA = `${BACKEND}/auditoria.php`;
 const FIRMAS = `${BACKEND}/firmas.php`;
 const CONFIG = `${BACKEND}/config.php`;
 
-// ================= CLUBS =================
 export const getClubs = async () => {
   const data = await request(CLUBS);
   return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
@@ -74,7 +118,6 @@ export const updateClub = (id, payload) =>
 export const deleteClub = (id) =>
   request(`${CLUBS}?id=${id}`, { method: 'DELETE' });
 
-// ================= CARRERAS =================
 export const getCarreras = async () => {
   const data = await request(CARRERAS);
   if (Array.isArray(data)) return data;
@@ -84,10 +127,8 @@ export const getCarreras = async () => {
   return [];
 };
 
-// ================= ASISTENCIAS =================
 export const getAsistenciasPorClub = async (clubId) => {
   const data = await request(`${ASISTENCIAS}?club_id=${clubId}`);
-  // Backends PHP suelen envolver payload como { status, data }
   const payload = data && typeof data === 'object' && !Array.isArray(data) && data.data
     ? data.data
     : data;
@@ -113,7 +154,6 @@ export const actualizarAsistencia = (payload) =>
     body: JSON.stringify(payload)
   });
 
-// ================= USUARIOS =================
 export const getUsuarios = async () => {
   const data = await request(USUARIOS);
   if (Array.isArray(data)) return data;
@@ -130,7 +170,6 @@ export const updateUsuario = (id, payload) =>
 export const deleteUsuario = (id) =>
   request(`${USUARIOS}?id=${id}`, { method: 'DELETE' });
 
-// ================= UPLOAD =================
 export const uploadFoto = async (file) => {
   const form = new FormData();
   form.append('foto', file);
@@ -141,7 +180,6 @@ export const uploadFoto = async (file) => {
   });
 };
 
-// ================= MONITORES =================
 export const getMonitoresPorClub = (clubId) =>
   request(`${MONITORES}?club_id=${clubId}`);
 
@@ -158,7 +196,6 @@ export const asignarMonitorAClub = (monitorId, clubId) =>
     body: JSON.stringify({ monitor_id: monitorId, club_id: clubId })
   });
 
-// ================= CONSTANCIAS =================
 export const getEvaluacion = async (params = {}) => {
   const query = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
@@ -183,7 +220,6 @@ export const saveConfig = (clave, valor) =>
     body: JSON.stringify({ clave, valor })
   });
 
-// ================= ALUMNOS =================
 export const getAlumnos = async () => {
   const data = await request(ALUMNOS);
   return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
@@ -203,7 +239,6 @@ export const updateAlumno = (id, payload) =>
     body: JSON.stringify(payload)
   });
 
-// ================= EVALUACIONES & AUDITORIA =================
 export const saveEvaluacion = (payload) =>
   request(SAVE_EVALUACION, {
     method: 'POST',

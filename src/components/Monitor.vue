@@ -238,6 +238,7 @@ import {
   getClubs
 } from "../services/api";
 import { BACKEND } from "../services/backend";
+import { authService } from "../services/auth";
 
 export default {
   name: "Monitor",
@@ -398,9 +399,13 @@ export default {
     cerrarSesion() {
       this.mostrarMensaje("Sesión cerrada correctamente.", "alert-info");
       setTimeout(() => {
-        sessionStorage.clear();
-        this.$router.push("/");
-      }, 1500);
+        authService.logout('current').then(() => {
+          this.$router.push("/");
+        }).catch(() => {
+          authService.clearAuth();
+          this.$router.push("/");
+        });
+      }, 500);
     },
     async agregarFecha() {
       if (!this.nuevaFecha || !this.usuarioActual.club_asignado) return;

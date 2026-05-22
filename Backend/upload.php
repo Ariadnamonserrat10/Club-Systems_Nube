@@ -47,7 +47,7 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) {
 }
 
 // Devolver ruta relativa para usar en la app
-$relative = 'Backend/uploads/' . $name;
+$relative = 'uploads/' . $name;
 
 echo json_encode(['status' => 'success', 'file' => $relative, 'filename' => $name]);
 
