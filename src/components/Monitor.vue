@@ -3,14 +3,20 @@
     <div class="d-flex flex-column monitor-background p-4 min-vh-100">
     <!-- PERFIL DEL MONITOR -->
     <div class="card shadow-sm p-3 mb-3 bg-white d-flex flex-row align-items-center">
-      <img
-        :src="resolveFotoUrl(usuarioActual.foto) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'"
-        alt="Foto del monitor"
-        class="rounded-circle me-3"
-        width="80"
-        height="80"
-        style="object-fit: cover;"
-      />
+      <template v-if="resolveFotoUrl(usuarioActual.foto) && !usuarioActualImageError">
+        <img
+          :src="resolveFotoUrl(usuarioActual.foto)"
+          alt="Foto del monitor"
+          class="rounded-circle me-3"
+          width="80"
+          height="80"
+          style="object-fit: cover;"
+          @error="handleUserImageError"
+        />
+      </template>
+      <div v-else class="rounded-circle me-3 d-flex align-items-center justify-content-center text-white fw-bold" style="width: 80px; height: 80px; background: linear-gradient(135deg, #080A4C 0%, #0066CC 100%); border: 3px solid rgba(255,255,255,0.5); font-size: 1.75rem;">
+        {{ getInitials(usuarioActual.nombre, usuarioActual.apellidoP) }}
+      </div>
       <div>
         <h4 class="text-primary mb-2">Registro de Asistencias</h4>
         <p><strong>Usuario:</strong> {{ usuarioActual.nombre }} {{ usuarioActual.apellidoP }}</p>
@@ -60,14 +66,14 @@
 
       <!-- TABLA DE ASISTENCIAS SIEMPRE VISIBLE PARA MOSTRAR FECHAS -->
       <table class="table table-hover align-middle">
-        <thead class="text-center" style="background-color: #080A4C; color: white;">
-          <tr>
-            <th class="text-white">Nombre</th>
-            <th v-for="fecha in fechasData" :key="fecha" class="text-white">{{ fecha }}</th>
-            <th class="text-white">Acreditado</th>
-            <th class="text-white">Evaluación</th>
-          </tr>
-        </thead>
+         <thead class="text-center modern-table-header">
+           <tr>
+             <th class="header-cell">Nombre</th>
+             <th v-for="fecha in fechasData" :key="fecha" class="header-cell">{{ fecha }}</th>
+             <th class="header-cell">Estatus</th>
+             <th class="header-cell">Evaluación</th>
+           </tr>
+         </thead>
         <tbody>
           <tr v-if="alumnosClub.length === 0">
             <td :colspan="(fechasData.length + 3)" class="text-center text-muted">
@@ -83,11 +89,15 @@
                 @change="onToggleAsistencia(alumno, fecha)"
               />
             </td>
-            <td class="text-center">
-              <span class="badge" :class="alumno.faltas < 3 ? 'bg-success' : 'bg-danger'">
-                {{ alumno.faltas < 3 ? 'Acreditado' : 'No acreditado' }}
-              </span>
-            </td>
+             <td class="text-center">
+               <span 
+                 class="status-pill" 
+                 :class="alumno.faltas < 3 ? 'status-accredited' : 'status-not-accredited'"
+               >
+                 <span class="status-dot"></span>
+                 {{ alumno.faltas < 3 ? 'Acreditado' : 'No acreditado' }}
+               </span>
+             </td>
             <td class="text-center">
               <button
                 v-if="!isEvaluated(alumno)"
@@ -232,13 +242,13 @@ import {
   crearFechaAsistencias, 
   actualizarAsistencia, 
   getAlumnos, 
-  registrarAuditoria, 
   saveEvaluacion,
   getEvaluatedStudents,
   getClubs
 } from "../services/api";
 import { BACKEND } from "../services/backend";
 import { authService } from "../services/auth";
+import { resolveFotoUrl } from "../services/imageUtils";
 
 export default {
   name: "Monitor",
@@ -252,6 +262,7 @@ export default {
         club_asignado: null,
         club_nombre: null,
       },
+      usuarioActualImageError: false,
       monitor: { nombre: "", club: "" },
       clubsList: [],
       selectedClubId: null,
@@ -296,12 +307,19 @@ export default {
     },
   },
   methods: {
-    resolveFotoUrl(foto) {
-      if (!foto || typeof foto !== "string") return "";
-      if (foto.startsWith("blob:")) return "";
-      if (/^https?:\/\//i.test(foto)) return foto;
-      const path = foto.startsWith("/") ? foto.slice(1) : foto;
-      return `${BACKEND}/${path}`;
+    resolveFotoUrl,
+    getInitials(nombre, apellido) {
+      let initials = "";
+      if (nombre && typeof nombre === "string" && nombre.trim()) {
+        initials += nombre.trim()[0].toUpperCase();
+      }
+      if (apellido && typeof apellido === "string" && apellido.trim()) {
+        initials += apellido.trim()[0].toUpperCase();
+      }
+      return initials || "U";
+    },
+    handleUserImageError() {
+      this.usuarioActualImageError = true;
     },
     async cargarUsuarioActual() {
       try {
@@ -315,14 +333,15 @@ export default {
           this.usuarioActual.nombre = datos.nombre || "";
           this.usuarioActual.apellidoP = datos.apellidoP || "";
           this.usuarioActual.tipo = datos.tipo || sessionStorage.getItem("usuarioTipo") || "";
-          this.usuarioActual.foto = this.resolveFotoUrl(datos.foto) || this.usuarioActual.foto;
+          this.usuarioActual.foto = datos.foto || this.usuarioActual.foto;
           this.usuarioActual.club_asignado = datos.club_asignado ?? null;
           this.usuarioActual.club_nombre = datos.club_nombre ?? null;
+          this.usuarioActualImageError = false;
           this.selectedClubId = this.usuarioActual.club_asignado;
           if (datos.club_nombre) this.monitor.club = datos.club_nombre;
         }
       } catch (error) {
-        console.error("Error cargando usuario Monitor:", error);
+        // Silencioso en producción
       }
     },
 
@@ -338,7 +357,7 @@ export default {
             alumnosClub = json.data;
           }
         } catch (e) {
-          console.error('Error cargando alumnos por club:', e);
+          // Silencioso
         }
 
         const data = await getAsistenciasPorClub(clubId);
@@ -364,7 +383,7 @@ export default {
         }
         this.$forceUpdate();
       } catch (e) {
-        console.error('Error cargando asistencias:', e);
+        // Silencioso - mostrar mensaje solo en interacción explícita
         this.mostrarMensaje('No se pudieron cargar asistencias', 'alert-danger');
       }
     },
@@ -373,7 +392,7 @@ export default {
       try {
         this.evaluados = await getEvaluatedStudents(clubName);
       } catch (e) {
-        console.error('Error loading evaluated students:', e);
+        // Silencioso
       }
     },
     isEvaluated(alumno) {
@@ -434,16 +453,9 @@ export default {
           }
         }
         await Promise.all(promesas);
-        this.mostrarMensaje("Cambios guardados correctamente.", "alert-success");
-        const usuarioId = sessionStorage.getItem('usuarioId');
-        if (usuarioId) {
-          await registrarAuditoria({
-            id_usuario: parseInt(usuarioId),
-            accion: 'Asistencia',
-            descripcion: `Registró asistencias para el club ${this.usuarioActual.club_nombre || 'N/A'}`
-          });
-        }
-      } catch (e) {
+         this.mostrarMensaje("Cambios guardados correctamente.", "alert-success");
+         // NOTA: Auditoría manejada por el backend
+       } catch (e) {
         this.mostrarMensaje("Error al guardar cambios.", "alert-danger");
       }
     },
@@ -493,18 +505,11 @@ export default {
         };
 
         const res = await saveEvaluacion(sendPayload);
-        if (res.status === 'success') {
-          this.mostrarMensaje('Evaluación guardada exitosamente', 'alert-success');
-          this.showEvalModal = false;
-          const usuarioId = sessionStorage.getItem('usuarioId');
-          if (usuarioId) {
-            await registrarAuditoria({
-              id_usuario: parseInt(usuarioId),
-              accion: 'Insertar',
-              descripcion: `Se evaluó al estudiante ${f.nombre_estudiante}`
-            });
-          }
-          if (!this.evaluados.some(e => e.nombre_estudiante === f.nombre_estudiante)) {
+         if (res.status === 'success') {
+           this.mostrarMensaje('Evaluación guardada exitosamente', 'alert-success');
+           this.showEvalModal = false;
+           // NOTA: Auditoría manejada por el backend
+           if (!this.evaluados.some(e => e.nombre_estudiante === f.nombre_estudiante)) {
             this.evaluados.push({ 
               nombre_estudiante: f.nombre_estudiante,
               nivel_desempeno: sendPayload.nivel_desempeno,
@@ -521,8 +526,14 @@ export default {
   async mounted() {
     await this.cargarUsuarioActual();
     await this.loadAsistencias();
-    // Auto-refresco cada 30 segundos
-    this.refreshInterval = setInterval(() => this.loadAsistencias(), 30000);
+    // Auto-refresco cada 10 segundos
+    this.refreshInterval = setInterval(async () => {
+      try {
+        await this.loadAsistencias();
+      } catch (e) {
+        // Silencioso
+      }
+    }, 10000);
   },
   beforeUnmount() {
     if (this.refreshInterval) clearInterval(this.refreshInterval);
@@ -531,6 +542,12 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 .monitor-wrapper {
   background-color: #080A4C;
   min-height: 100vh;
@@ -538,57 +555,350 @@ export default {
   padding: 0;
   width: 100%;
 }
+
 .monitor-background {
-  background: linear-gradient(180deg, #080A4C 0%, #050630 100%);
+  background: linear-gradient(135deg, #080A4C 0%, #1a237e 30%, #0d1b4d 70%, #050630 100%);
   color: #eef1ff;
   min-height: 100vh;
   width: 100%;
+  position: relative;
+  overflow-x: hidden;
 }
+
+.monitor-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 70%),
+    radial-gradient(ellipse at 90% 80%, rgba(13, 71, 161, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  animation: ambientGlow 15s ease-in-out infinite alternate;
+}
+
+@keyframes ambientGlow {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
 .monitor-background .card {
-  background: rgba(255,255,255,0.96);
+  background: rgba(255, 255, 255, 0.98);
   border: none;
-  border-radius: 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.monitor-background .card:hover {
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.modern-table-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #080A4C 50%, #0d1b4d 100%) !important;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-table-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(50%); }
+}
+
+.header-cell {
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 16px 12px !important;
+  border: none;
+  background: transparent !important;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: default;
+  user-select: none;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.3);
+    opacity: 0.8;
+  }
+}
+
+.status-accredited {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  color: #ffffff;
+  box-shadow: 
+    0 4px 15px rgba(16, 185, 129, 0.4),
+    0 0 20px rgba(16, 185, 129, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.status-accredited .status-dot {
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.status-accredited:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 6px 25px rgba(16, 185, 129, 0.5),
+    0 0 30px rgba(16, 185, 129, 0.3);
+}
+
+.status-not-accredited {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 
+    0 4px 15px rgba(239, 68, 68, 0.4),
+    0 0 20px rgba(239, 68, 68, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.status-not-accredited .status-dot {
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  animation: urgentPulse 1s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.4);
+    opacity: 0.6;
+  }
+}
+
+.status-not-accredited:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 6px 25px rgba(239, 68, 68, 0.5),
+    0 0 30px rgba(239, 68, 68, 0.3);
+}
+
 .monitor-background .text-secondary,
 .monitor-background .text-muted,
 .monitor-background .form-label,
-.monitor-background .badge,
 .monitor-background .table td {
-  color: #1f2d5c !important;
-}
-.text-primary {
-  color: #080A4C !important;
-}
-.btn-outline-primary {
-  color: #080A4C;
-  border-color: #080A4C;
-}
-.btn-outline-primary:hover {
-  background-color: #080A4C;
-  color: white;
-}
-.btn-success {
-  background-color: #28a745;
-  border-color: #28a745;
-}
-.btn-outline-danger {
-  color: #dc3545;
-  border-color: #dc3545;
-}
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  color: white;
-}
-.table thead th {
-  color: #ffffff !important;
-  background-color: #080A4C !important;
+  color: #1e293b !important;
+  font-weight: 400;
 }
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-.fade-enter, .fade-leave-to { opacity: 0; }
+.text-primary {
+  color: #1e3a5f !important;
+  font-weight: 600;
+}
+
+.btn-outline-primary {
+  color: #1e3a5f;
+  border-color: #1e3a5f;
+  border-width: 2px;
+  font-weight: 500;
+  border-radius: 12px;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+  background: linear-gradient(135deg, #1e3a5f 0%, #080A4C 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 58, 95, 0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 10px 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.btn-outline-danger {
+  color: #dc2626;
+  border-color: #dc2626;
+  border-width: 2px;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-danger:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+}
+
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.04), rgba(59, 130, 246, 0.02));
+}
+
+.table tbody td {
+  border-top: 1px solid #f1f5f9;
+  padding: 14px 12px;
+  vertical-align: middle;
+}
+
+.table thead th {
+  border: none;
+}
+
+.fade-enter-active, .fade-leave-active { 
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-enter, .fade-leave-to { 
+  opacity: 0;
+  transform: translateY(10px);
+}
 
 @keyframes slideIn {
-  from { transform: translateX(100px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from { 
+    transform: translateX(100px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+.table input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #10b981;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.table input[type="checkbox"]:hover {
+  transform: scale(1.1);
+}
+
+.modal-content {
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #080A4C 100%) !important;
+  border-radius: 20px 20px 0 0 !important;
+  border: none;
+  padding: 20px 24px;
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 1.15rem;
+}
+
+.btn-secondary {
+  border-radius: 12px;
+  font-weight: 500;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1e3a5f 0%, #080A4C 100%);
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 10px 24px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 58, 95, 0.3);
+}
+
+.form-control,
+.form-select {
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #1e3a5f;
+  box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.1);
 }
 </style>

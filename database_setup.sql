@@ -22,8 +22,13 @@ CREATE TABLE IF NOT EXISTS evaluaciones (
 CREATE TABLE IF NOT EXISTS auditoria (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
+    usuario VARCHAR(100) NULL,
     accion VARCHAR(100) NOT NULL,
-    descripcion TEXT,
+    tipo VARCHAR(50) NULL DEFAULT 'sistema',
+    descripcion TEXT NULL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
+    INDEX idx_usuario (id_usuario),
+    INDEX idx_fecha (fecha),
+    INDEX idx_tipo (tipo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

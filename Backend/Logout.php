@@ -4,6 +4,7 @@ header("Content-Type: application/json; charset=utf-8");
 
 include __DIR__ . "/db.php";
 require_once __DIR__ . "/TokenManager.php";
+require_once __DIR__ . "/AuditHelper.php";
 
 $tokenManager = new TokenManager();
 
@@ -48,6 +49,18 @@ if (!$tokenInfo) {
 $userId = $tokenInfo['user_id'];
 $currentTokenId = $tokenInfo['id'];
 
+$usuarioAudit = 'Usuario';
+$stmtUser = $conexion->prepare("SELECT nombre, apellidoP, usuario FROM usuarios WHERE id = ? LIMIT 1");
+if ($stmtUser) {
+    $stmtUser->bind_param("i", $userId);
+    $stmtUser->execute();
+    $resUser = $stmtUser->get_result();
+    if ($resUser && $rowUser = $resUser->fetch_assoc()) {
+        $nombreCompleto = trim($rowUser['nombre'] . ' ' . $rowUser['apellidoP']);
+        $usuarioAudit = $nombreCompleto ?: $rowUser['usuario'] ?: 'Usuario';
+    }
+}
+
 if ($logoutMode === 'all') {
     $revoked = $tokenManager->revokeAllUserTokens($userId);
     $message = sprintf('Se cerraron %d sesiones', $revoked);
@@ -61,6 +74,9 @@ if ($logoutMode === 'all') {
     }
     $message = 'Sesión cerrada exitosamente';
 }
+
+$descAudit = "Cierre de sesión - Modo: $logoutMode";
+audit_logout($userId, $usuarioAudit, $descAudit);
 
 echo json_encode([
     'status' => 'success',

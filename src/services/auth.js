@@ -50,7 +50,7 @@ export const authService = {
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
             } catch (e) {
-                console.warn('Error al cerrar sesión en servidor:', e);
+                // Silencioso en producción - error no crítico
             }
         }
         

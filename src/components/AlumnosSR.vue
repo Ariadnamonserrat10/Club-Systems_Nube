@@ -141,8 +141,8 @@ export default {
         const json = await res.json();
         // Acepta { data: [...] } o arreglo directo
         this.carrerasMap = Array.isArray(json) ? json : (json.data || []);
-      } catch (e) {
-        console.error('No se pudo cargar carreras:', e);
+       } catch (e) {
+        // Silencioso
       }
     },
 

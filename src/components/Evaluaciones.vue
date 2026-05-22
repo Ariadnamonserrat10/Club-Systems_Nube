@@ -308,12 +308,12 @@ export default {
             return { ...al, carrera: carreraNombre, asistencias: map, faltas, club: club.nombre };
           });
           
-          this.evaluadosPorClub[club.nombre] = evaluados;
-        } catch (e) {
-          console.error(`Error club ${club.nombre}:`, e);
-        }
-      }
-    },
+           this.evaluadosPorClub[club.nombre] = evaluados;
+         } catch (e) {
+           // Silencioso en producción
+         }
+       }
+     },
     filteredAlumnos(clubName) {
       const club = this.clubs.find(c => c.nombre === clubName);
       if (!club) return [];

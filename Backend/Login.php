@@ -5,6 +5,7 @@ header("Content-Type: application/json; charset=utf-8");
 include __DIR__ . "/db.php";
 require_once __DIR__ . "/validation.php";
 require_once __DIR__ . "/TokenManager.php";
+require_once __DIR__ . "/AuditHelper.php";
 
 session_start();
 
@@ -156,6 +157,11 @@ if ($rememberMe) {
 }
 
 $csrfToken = $tokenManager->createCsrfToken($user['id']);
+
+$nombreCompleto = trim($user['nombre'] . ' ' . $user['apellidoP']);
+$usuarioAudit = $nombreCompleto ?: $user['usuario'] ?: 'Usuario';
+$descAudit = "Inicio de sesión exitoso - Tipo: " . strtoupper($user['tipo']);
+audit_login((int)$user['id'], $usuarioAudit, $descAudit);
 
 $response = [
     "status" => "success",

@@ -36,3 +36,8 @@ INSERT INTO `periodos` (`nombre`, `fecha_inicio`, `fecha_fin`, `estado`) VALUES 
 
 -- Actualizar alumnos existentes al periodo 1
 UPDATE `alumnos` SET `periodo_id` = 1 WHERE `periodo_id` IS NULL;
+
+-- Agregar columnas faltantes a la tabla auditoria
+ALTER TABLE `auditoria` ADD COLUMN `usuario` VARCHAR(100) NULL;
+ALTER TABLE `auditoria` ADD COLUMN `tipo` VARCHAR(50) NULL DEFAULT 'sistema';
+ALTER TABLE `auditoria` ADD INDEX `idx_tipo` (`tipo`);

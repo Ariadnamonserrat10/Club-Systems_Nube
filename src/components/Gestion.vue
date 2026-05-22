@@ -37,9 +37,21 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="u in filteredUsers" :key="u.id">
+         <tr v-for="u in filteredUsers" :key="u.id">
           <td>
-            <img :src="resolveFotoUrl(u.foto) || placeholder" alt="foto" width="36" height="36" class="rounded-circle"/>
+            <template v-if="resolveFotoUrl(u.foto) && !imageErrors[u.id]">
+              <img 
+                :src="resolveFotoUrl(u.foto)" 
+                alt="foto" 
+                width="36" 
+                height="36" 
+                class="rounded-circle"
+                @error="handleImageError(u.id)"
+              />
+            </template>
+            <div v-else class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fw-bold" style="width: 36px; height: 36px; font-size: 0.875rem;">
+              {{ getInitialsFromUser(u) }}
+            </div>
           </td>
           <td>{{ u.nombre }} {{ u.apellidoP }} {{ u.apellidoM }}</td>
           <td>{{ u.usuario }}</td>
@@ -218,7 +230,19 @@
                 <input type="file" accept="image/*" class="form-control" @change="onSelectFoto"/>
               </div>
               <div class="col-12 mt-2" v-if="previewFoto">
-                <img :src="previewFoto" alt="preview" class="rounded" width="100" height="100"/>
+                <template v-if="!previewImageError || previewFoto.startsWith('blob:')">
+                  <img 
+                    :src="previewFoto" 
+                    alt="preview" 
+                    class="rounded" 
+                    width="100" 
+                    height="100"
+                    @error="handlePreviewImageError"
+                  />
+                </template>
+                <div v-else class="rounded d-flex align-items-center justify-content-center bg-secondary text-white fw-bold" style="width: 100px; height: 100px; font-size: 1.25rem;">
+                  {{ getInitialsFromUser(form) }}
+                </div>
               </div>
             </div>
           </div>
@@ -239,7 +263,7 @@ import { BACKEND } from '../services/backend';
 export default {
   name: 'Gestion',
   props: ['usuarios'],
-  data() {
+     data() {
     return {
       filterTipo: '',
       list: [],
@@ -259,7 +283,9 @@ export default {
       placeholder: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
       localMsg: '',
       localMsgType: 'error',
-      pendingDeleteUser: null
+      pendingDeleteUser: null,
+      imageErrors: {},
+      previewImageError: false
     };
   },
   computed: {
@@ -520,11 +546,35 @@ export default {
       return '';
     },
     resolveFotoUrl(foto) {
-      if (!foto || typeof foto !== 'string') return '';
-      if (foto.startsWith('blob:')) return '';
+      if (!foto || typeof foto !== 'string') return null;
+      if (foto.startsWith('blob:')) return null;
       if (/^https?:\/\//i.test(foto)) return foto;
-      const path = foto.startsWith('/') ? foto.slice(1) : foto;
+      
+      let path = foto.startsWith('/') ? foto.slice(1) : foto;
+      
+      if (path.startsWith('Backend/')) {
+        path = path.slice(8);
+      }
+      if (path.startsWith('/')) {
+        path = path.slice(1);
+      }
+      
       return `${BACKEND}/${path}`;
+    },
+    getInitialsFromUser(u) {
+      if (!u) return 'U';
+      const nombre = (u.nombre || '').trim();
+      const apellidoP = (u.apellidoP || '').trim();
+      let initials = '';
+      if (nombre) initials += nombre.charAt(0).toUpperCase();
+      if (apellidoP) initials += apellidoP.charAt(0).toUpperCase();
+      return initials || 'U';
+    },
+    handleImageError(userId) {
+      this.imageErrors[userId] = true;
+    },
+    handlePreviewImageError() {
+      this.previewImageError = true;
     },
     async loadUsuarios() {
       try {
@@ -536,8 +586,8 @@ export default {
           ...u,
           foto: (typeof u?.foto === 'string' && u.foto.startsWith('blob:')) ? '' : u?.foto
         }));
+        this.imageErrors = {};
       } catch (e) {
-        console.error(e);
         this.notifyError(e.message || 'Error al cargar usuarios');
       }
     },
@@ -546,7 +596,6 @@ export default {
         const clubs = await getClubs();
         this.clubsList = Array.isArray(clubs) ? clubs : [];
       } catch (e) {
-        console.error(e);
         this.clubsList = [];
       }
     },
@@ -554,6 +603,7 @@ export default {
       this.selectedId = u.id;
       this.form = { ...u, password: '', confirmPassword: '' };
       this.previewFoto = this.resolveFotoUrl(u.foto) || '';
+      this.previewImageError = false;
       this.fotoFile = null;
       this.showPassword = false;
       this.showCurrentPassword = false;
@@ -570,6 +620,7 @@ export default {
       this.selectedId = null;
       this.fotoFile = null;
       this.previewFoto = '';
+      this.previewImageError = false;
       this.showPassword = false;
       this.showCurrentPassword = false;
       this.cambiarPassword = false;
@@ -627,8 +678,8 @@ export default {
         await this.loadUsuarios();
         this.closeModal();
         this.notifySuccess('Usuario actualizado correctamente');
-      } catch (e) {
-        console.error(e);
+       } catch (e) {
+        // Silencioso
         this.notifyError(e.message || 'Error al guardar');
       }
     },
@@ -649,7 +700,7 @@ export default {
         if (instance) instance.hide();
         this.pendingDeleteUser = null;
       } catch (e) {
-        console.error(e);
+        // Silencioso
         this.notifyError(e.message || 'Error al eliminar');
       }
     }

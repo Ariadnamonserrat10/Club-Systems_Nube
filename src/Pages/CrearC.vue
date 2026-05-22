@@ -248,7 +248,7 @@ const obtenerClubs = async () => {
     const res = await axios.get(`${BACKEND}/Clubs.php`);
     clubs.value = res.data.data;
   } catch (err) {
-    console.warn("No se pudieron cargar clubs:", err.message);
+    // Silencioso en producción
   }
 };
 
@@ -260,7 +260,7 @@ const copyToClipboard = async (text) => {
       alert("Contraseña copiada al portapapeles");
     }
   } catch (err) {
-    console.error("Error al copiar:", err);
+    // Silencioso en producción
   }
 };
 
@@ -341,7 +341,6 @@ const handleRegister = async () => {
         details || response.data.message || "Error al registrar el usuario.";
     }
   } catch (error) {
-    console.error("Error:", error);
     if (error.response) {
       const details = Array.isArray(error.response.data?.details)
         ? error.response.data.details.filter(Boolean).join('. ')
@@ -420,7 +419,7 @@ onMounted(async () => {
       return;
     }
   } catch (err) {
-    console.warn("No se pudieron cargar carreras:", err.message);
+    // Silencioso en producción
   }
 
   if (carreras.value.length === 0) {

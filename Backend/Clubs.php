@@ -12,6 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 include __DIR__ . "/db.php";
 require_once __DIR__ . "/validation.php";
+require_once __DIR__ . "/AuditHelper.php";
+require_once __DIR__ . "/AuthMiddleware.php";
 
 // Obtener conexión PDO o mysqli desde db.php
 $pdo = null;

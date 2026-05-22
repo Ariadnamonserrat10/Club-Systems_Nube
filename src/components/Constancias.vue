@@ -664,19 +664,15 @@ export default {
                 ).length;
                 return { ...al, asistencias: map, faltas, club: club.nombre };
               });
-            } catch (e) {
-              console.error(
-                `Error cargando asistencias para club ${club.id}:`,
-                e,
-              );
-              this.alumnosPorClub[club.id] = [];
-            }
+             } catch (e) {
+               this.alumnosPorClub[club.id] = [];
+             }
           }
         }
-      } catch (e) {
-        console.error("Error cargando asistencias por clubs:", e);
-      }
-    },
+       } catch (e) {
+         // Silencioso en producción
+       }
+     },
     filteredAlumnos(clubName) {
       // Buscar el club por nombre
       const club = (this.sortedClubs || []).find((c) => c.nombre === clubName);
@@ -859,11 +855,11 @@ export default {
           
           valorNumerico = parseInt(evalData.valor_numerico);
         }
-      } catch (e) {
-        console.error('Error obteniendo evaluación:', e);
-      }
+       } catch (e) {
+         // Silencioso en producción
+       }
 
-      if (!desempeno) {
+       if (!desempeno) {
         // Fallback: calcular por faltas
         desempeno = (
           alumno.desempeno ||
@@ -974,10 +970,9 @@ export default {
     toUpper(v) {
       return (v == null ? "" : String(v)).toUpperCase();
     },
-    async descargarTodasConstanciasClub(clubNombre) {
-      const alumnosAcreditados = this.filteredAlumnos(clubNombre).filter(alumno => this.isAcreditado(alumno));
-      console.log('Alumnos acreditados:', alumnosAcreditados);
-      if (!alumnosAcreditados.length) {
+     async descargarTodasConstanciasClub(clubNombre) {
+       const alumnosAcreditados = this.filteredAlumnos(clubNombre).filter(alumno => this.isAcreditado(alumno));
+       if (!alumnosAcreditados.length) {
         alert(`No hay alumnos acreditados en el club ${clubNombre}`);
         return;
       }
@@ -1113,12 +1108,12 @@ export default {
         .replace(/\s+/g, ' ')
         .trim();
       this.jefesSeleccionados[cargo + '_nombre'] = valor;
-      try {
-        await saveConfig('firma_' + cargo, valor);
-      } catch (e) {
-        console.error('Error al guardar firma manual:', e);
-      }
-    },
+       try {
+         await saveConfig('firma_' + cargo, valor);
+       } catch (e) {
+         // Silencioso en producción
+       }
+     },
     async loadCargos() {
       try {
         const firmas = await getFirmas();
@@ -1139,11 +1134,11 @@ export default {
         if (firmas.jefa_servicios) {
           this.jefesSeleccionados.jefa_servicios_nombre = firmas.jefa_servicios.nombre;
           this.sanitizeNombreInput('jefa_servicios_nombre');
-        }
-      } catch (e) {
-        console.error('Error al cargar cargos:', e);
-      }
-    },
+         }
+       } catch (e) {
+         // Silencioso en producción
+       }
+     },
     getNombreJefe(cargo) {
       if (cargo === 'jefa_servicios') {
         const raw = String(this.jefesSeleccionados.jefa_servicios_nombre || '').toUpperCase();

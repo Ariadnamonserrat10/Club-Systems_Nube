@@ -1,4 +1,13 @@
 <?php
+/**
+ * auditoria.php - Audit endpoint
+ * 
+ * SECURITY: 
+ * - GET is allowed for viewing audit logs (requires authentication)
+ * - DIRECT POST from frontend is RESTRICTED - use internal AuditHelper instead
+ * - Only internal backend code should generate audit entries
+ */
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -10,52 +19,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 include __DIR__ . "/db.php";
+require_once __DIR__ . "/AuditHelper.php";
+require_once __DIR__ . "/AuthMiddleware.php";
 
 try {
+    $auth = new AuthMiddleware();
+    $authResult = $auth->requireAnyAuthenticated();
+    $currentUser = $auth->getUser();
+    
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Obtener registros de auditoría
-        $sql = "SELECT a.*, u.nombre as usuario_nombre 
-               FROM auditoria a 
-               LEFT JOIN usuarios u ON a.id_usuario = u.id 
-               ORDER BY a.fecha DESC 
-               LIMIT 100";
-        $stmt = $conexion->prepare($sql);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+        $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
         
-        $registros = [];
-        while ($row = $result->fetch_assoc()) {
-            $registros[] = $row;
-        }
+        if ($limit < 1) $limit = 1;
+        if ($limit > 500) $limit = 500;
+        if ($offset < 0) $offset = 0;
         
-        echo json_encode(['status' => 'success', 'data' => $registros]);
+        $auditHelper = AuditHelper::getInstance();
+        $logs = $auditHelper->getLogs($limit, $offset);
+        $total = $auditHelper->getTotalCount();
+        
+        echo json_encode([
+            'status' => 'success',
+            'data' => $logs,
+            'pagination' => [
+                'total' => $total,
+                'limit' => $limit,
+                'offset' => $offset
+            ]
+        ]);
         exit;
     }
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        if (!$data || !isset($data['accion'])) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Datos insuficientes']);
-            exit;
-        }
-        
-        $id_usuario = isset($data['id_usuario']) ? (int)$data['id_usuario'] : null;
-        $usuario = isset($data['usuario']) ? $data['usuario'] : null;
-        $accion = $data['accion'];
-        $tipo = isset($data['tipo']) ? $data['tipo'] : 'sistema';
-        $descripcion = isset($data['descripcion']) ? $data['descripcion'] : null;
-        
-        $sql = "INSERT INTO auditoria (id_usuario, usuario, accion, tipo, descripcion) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conexion->prepare($sql);
-        $stmt->bind_param("issss", $id_usuario, $usuario, $accion, $tipo, $descripcion);
-        
-        if ($stmt->execute()) {
-            echo json_encode(['status' => 'success', 'id' => $conexion->insert_id]);
-        } else {
-            throw new Exception($stmt->error);
-        }
+        http_response_code(403);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Direct POST to auditoria.php is restricted. Use internal AuditHelper in backend code.',
+            'code' => 'DIRECT_AUDIT_POST_NOT_ALLOWED'
+        ]);
         exit;
     }
     
@@ -66,4 +68,3 @@ try {
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
 }
-?>
