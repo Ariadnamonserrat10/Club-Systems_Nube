@@ -1,206 +1,259 @@
-// src/services/api.js
-// Servicio simple para consumir el backend PHP de Clubs y Alumnos
+import { BACKEND } from './backend';
+import { authService } from './auth';
 
-const CLUBS_BASE = '/api/clubs.php';
-const ALUMNOS_BASE = '/api/Alumnos.php';
-const CARRERAS_BASE = '/api/carreras.php';
-const ASISTENCIAS_BASE = '/api/asistencias.php';
-const USUARIOS_BASE = '/api/Usuarios.php';
-const UPLOAD_BASE = '/api/upload.php';
+function normalizeApiErrorMessage(data) {
+  const detailsArray = Array.isArray(data?.details) ? data.details.filter(Boolean) : [];
+  const detailsString = typeof data?.details === 'string' ? data.details.trim() : '';
+  const baseMsg = (data?.message || data?.error || '').toString().trim();
 
-async function toJson(res) {
+  if (detailsArray.length) return detailsArray.join('. ');
+  if (detailsString) return detailsString;
+
+  if (/^validaci[oó]n$/i.test(baseMsg)) {
+    return 'Los datos enviados no son válidos. Verifica texto, números y caracteres permitidos.';
+  }
+
+  return baseMsg || 'Error en la petición';
+}
+
+function getAuthHeaders() {
+  const headers = {};
+  const token = authService.getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+async function handleAuthError(response) {
+  if (response.status === 401) {
+    try {
+      const newToken = await authService.refreshToken();
+      return true;
+    } catch (e) {
+      authService.clearAuth();
+      if (typeof window !== 'undefined' && window.location) {
+        const hash = window.location.hash || '';
+        if (hash.includes('oficina') || hash.includes('monitor')) {
+          window.location.href = '#/';
+        }
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+async function request(url, options = {}) {
+  const finalOptions = {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      ...options.headers
+    }
+  };
+
+  let res = await fetch(url, finalOptions);
+  
+  if (res.status === 401) {
+    const retrySuccess = await handleAuthError(res);
+    if (retrySuccess && authService.getToken()) {
+      finalOptions.headers = {
+        ...getAuthHeaders(),
+        ...options.headers
+      };
+      res = await fetch(url, finalOptions);
+    }
+  }
+
   const text = await res.text();
-  try { return JSON.parse(text); } catch { return { raw: text }; }
+
+  let data;
+  try { data = JSON.parse(text); } 
+  catch { data = { raw: text }; }
+
+  const finalMsg = normalizeApiErrorMessage(data);
+
+  if (!res.ok || data?.status === 'error') {
+    throw new Error(finalMsg);
+  }
+
+  return data;
 }
 
-// Clubs
-export async function getClubs() {
-  const res = await fetch(CLUBS_BASE, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.error || 'Error al obtener clubs');
-  return data.data || [];
-}
+const CLUBS = `${BACKEND}/Clubs.php`;
+const ALUMNOS = `${BACKEND}/Alumnos.php`;
+const CARRERAS = `${BACKEND}/carreras.php`;
+const ASISTENCIAS = `${BACKEND}/asistencias.php`;
+const USUARIOS = `${BACKEND}/Usuarios.php`;
+const UPLOAD = `${BACKEND}/upload.php`;
+const MONITORES = `${BACKEND}/getMonitores.php`;
+const ASIGNAR = `${BACKEND}/asignarMonitor.php`;
+const EVALUACION = `${BACKEND}/evaluacion.php`;
+const SAVE_EVALUACION = `${BACKEND}/saveEvaluacion.php`;
+const GET_EVALUADOS = `${BACKEND}/getEvaluatedStudents.php`;
+const AUDITORIA = `${BACKEND}/auditoria.php`;
+const FIRMAS = `${BACKEND}/firmas.php`;
+const CONFIG = `${BACKEND}/config.php`;
 
-export async function createClub(payload) {
-  const res = await fetch(CLUBS_BASE, {
+export const getClubs = async () => {
+  const data = await request(CLUBS);
+  return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+};
+
+export const createClub = (payload) =>
+  request(CLUBS, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Error al crear club');
-  return data.data;
-}
 
-export async function updateClub(id, payload) {
-  const url = `${CLUBS_BASE}?id=${encodeURIComponent(id)}`;
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Error al actualizar club');
-  return data.data;
-}
-
-export async function deleteClub(id) {
-  const url = `${CLUBS_BASE}?id=${encodeURIComponent(id)}`;
-  const res = await fetch(url, { method: 'DELETE' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Error al eliminar club');
-  return data;
-}
-
-// Carreras
-export async function getCarreras() {
-  const res = await fetch(CARRERAS_BASE, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Error al obtener carreras');
-  return data.data || [];
-}
-
-// Asistencias
-export async function getAsistenciasPorClub(clubId) {
-  const url = `${ASISTENCIAS_BASE}?club_id=${encodeURIComponent(clubId)}`;
-  const res = await fetch(url, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al obtener asistencias');
-  return data.data || { fechas: [], asistencias: {}, alumnos: [] };
-}
-
-export async function crearFechaAsistencias({ club_id, fecha, registros }) {
-  const res = await fetch(ASISTENCIAS_BASE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ club_id, fecha, registros })
-  });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al crear fecha/asistencias');
-  return data;
-}
-
-export async function actualizarAsistencia({ alumno_id, fecha, presente }) {
-  const res = await fetch(ASISTENCIAS_BASE, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ alumno_id, fecha, presente })
-  });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al actualizar asistencia');
-  return data;
-}
-
-// Usuarios
-export async function getUsuarios() {
-  const res = await fetch(USUARIOS_BASE, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al obtener usuarios');
-  return data.data || [];
-}
-
-export async function updateUsuario(id, payload) {
-  const url = `${USUARIOS_BASE}?id=${encodeURIComponent(id)}`;
-  const res = await fetch(url, {
+export const updateClub = (id, payload) =>
+  request(`${CLUBS}?id=${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al actualizar usuario');
-  return data;
-}
 
-export async function deleteUsuario(id) {
-  const url = `${USUARIOS_BASE}?id=${encodeURIComponent(id)}`;
-  const res = await fetch(url, { method: 'DELETE' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al eliminar usuario');
-  return data;
-}
+export const deleteClub = (id) =>
+  request(`${CLUBS}?id=${id}`, { method: 'DELETE' });
 
-export async function uploadFoto(file) {
+export const getCarreras = async () => {
+  const data = await request(CARRERAS);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.carreras)) return data.carreras;
+  if (Array.isArray(data?.rows)) return data.rows;
+  return [];
+};
+
+export const getAsistenciasPorClub = async (clubId) => {
+  const data = await request(`${ASISTENCIAS}?club_id=${clubId}`);
+  const payload = data && typeof data === 'object' && !Array.isArray(data) && data.data
+    ? data.data
+    : data;
+
+  return {
+    fechas: Array.isArray(payload?.fechas) ? payload.fechas : [],
+    alumnos: Array.isArray(payload?.alumnos) ? payload.alumnos : [],
+    asistencias: payload?.asistencias && typeof payload.asistencias === 'object' ? payload.asistencias : {}
+  };
+};
+
+export const crearFechaAsistencias = (payload) =>
+  request(ASISTENCIAS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+export const actualizarAsistencia = (payload) =>
+  request(ASISTENCIAS, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+export const getUsuarios = async () => {
+  const data = await request(USUARIOS);
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.data) ? data.data : [];
+};
+
+export const updateUsuario = (id, payload) =>
+  request(`${USUARIOS}?id=${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+export const deleteUsuario = (id) =>
+  request(`${USUARIOS}?id=${id}`, { method: 'DELETE' });
+
+export const uploadFoto = async (file) => {
   const form = new FormData();
   form.append('foto', file);
-  const res = await fetch(UPLOAD_BASE, { method: 'POST', body: form });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error(data?.message || 'Error al subir imagen');
-  return data; // { status, file, filename }
-}
 
-// Monitores por Club
-export async function getMonitoresPorClub(clubId) {
-  const url = `/api/getMonitores.php?club_id=${encodeURIComponent(clubId)}`;
-  const res = await fetch(url, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) {
-    console.error('Error fetching monitores:', res.status, data);
-    return { club_id: clubId, monitores: [] };
-  }
-  return data.data || { club_id: clubId, monitores: [] };
-}
+  return request(UPLOAD, {
+    method: 'POST',
+    body: form
+  });
+};
 
-// Obtener todos los monitores con sus clubs asignados
-export async function getAllMonitoresWithClubs() {
-  const res = await fetch(`/api/Usuarios.php`, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) {
-    console.error('Error fetching all usuarios:', res.status, data);
-    return [];
-  }
-  // Filtrar solo monitores que tengan club asignado
-  return (data.data || []).filter(u => u.tipo === 'MONITOR' && u.club_asignado);
-}
+export const getMonitoresPorClub = (clubId) =>
+  request(`${MONITORES}?club_id=${clubId}`);
 
-// Asignar monitor a un club
-export async function asignarMonitorAClub(monitorId, clubId) {
-  const url = `/api/asignarMonitor.php`;
-  const res = await fetch(url, {
+export const getAllMonitoresWithClubs = async () => {
+  const data = await request(USUARIOS);
+  const usuarios = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+  return usuarios.filter(u => u.tipo === 'MONITOR' && u.club_asignado);
+};
+
+export const asignarMonitorAClub = (monitorId, clubId) =>
+  request(ASIGNAR, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ monitor_id: monitorId, club_id: clubId })
   });
-  const data = await toJson(res);
-  if (!res.ok) {
-    console.error('Error asigning monitor:', res.status, data);
-    throw new Error(data?.message || 'Error al asignar monitor');
-  }
-  return data.data;
-}
 
-// Alumnos
-export async function getAlumnos() {
-  const res = await fetch(ALUMNOS_BASE, { method: 'GET' });
-  const data = await toJson(res);
-  if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Error al obtener alumnos');
-  return data.data || [];
-}
+export const getEvaluacion = async (params = {}) => {
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  ).toString();
 
-export async function createAlumno(payload) {
-  const res = await fetch(ALUMNOS_BASE, {
+  return request(query ? `${EVALUACION}?${query}` : EVALUACION);
+};
+
+export const getFirmas = () => request(FIRMAS);
+
+export const asignarCargo = (cargo, idUsuario) =>
+  request(FIRMAS, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ cargo, id_usuario: idUsuario })
   });
-  const data = await toJson(res);
-  if (!res.ok) {
-    const msg = data?.message || data?.error || (Array.isArray(data?.details) ? data.details.join(', ') : 'Error al crear alumno');
-    throw new Error(msg);
-  }
-  return data.data;
-}
 
-export async function updateAlumno(id, payload) {
-  const url = `${ALUMNOS_BASE}?id=${encodeURIComponent(id)}`;
-  const res = await fetch(url, {
+export const saveConfig = (clave, valor) =>
+  request(CONFIG, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clave, valor })
+  });
+
+export const getAlumnos = async () => {
+  const data = await request(ALUMNOS);
+  return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+};
+
+export const createAlumno = (payload) =>
+  request(ALUMNOS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+export const updateAlumno = (id, payload) =>
+  request(`${ALUMNOS}?id=${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
-  const data = await toJson(res);
-  if (!res.ok) {
-    const msg = data?.message || data?.error || (Array.isArray(data?.details) ? data.details.join(', ') : 'Error al actualizar alumno');
-    throw new Error(msg);
-  }
-  return data.data;
-}
+
+export const saveEvaluacion = (payload) =>
+  request(SAVE_EVALUACION, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+export const getEvaluatedStudents = async (clubName) => {
+  const data = await request(`${GET_EVALUADOS}?club_name=${encodeURIComponent(clubName)}`);
+  return Array.isArray(data?.data) ? data.data : [];
+};
+
+export const registrarAuditoria = (payload) =>
+  request(AUDITORIA, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });

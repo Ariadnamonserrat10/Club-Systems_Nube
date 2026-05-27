@@ -1,29 +1,9 @@
 <?php
-// Backend/Alumnos.php
-// Endpoint REST para gestionar la tabla `alumnos` con los campos proporcionados.
-// Estructura esperada de la tabla alumnos:
-// id (int, PK, AI), nombre (varchar), apellidoP (varchar), apellidoM (varchar),
-// numeroControl (char(8)), telefono (char(10), nullable), carrera_id (int, nullable),
-// semestre_id (int, nullable), id_club (int, nullable), fecha_registro (date, default curdate())
+require_once "cors.php";
+header("Content-Type: application/json; charset=utf-8");
 
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
-}
-
-$root = __DIR__;
-$dbFile = $root . DIRECTORY_SEPARATOR . 'db.php';
-if (!file_exists($dbFile)) {
-  http_response_code(500);
-  echo json_encode(['error' => 'No se encontró Backend/db.php']);
-  exit;
-}
-require_once $dbFile; // expone $conexion (mysqli)
+include __DIR__ . "/db.php";
+require_once __DIR__ . "/validation.php";
 
 if (!isset($conexion) || !($conexion instanceof mysqli)) {
   if (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
@@ -46,13 +26,13 @@ try {
 
     if (isset($_GET['club_id']) && $_GET['club_id'] !== '') {
       $clubId = (int)$_GET['club_id'];
-      $stmt = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club, fecha_registro FROM alumnos WHERE id_club = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
+      $stmt = $conexion->prepare("SELECT a.id, a.nombre, a.apellidoP, a.apellidoM, a.numeroControl, a.telefono, a.carrera_id, a.semestre_id, a.id_club, a.fecha_registro FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.id_club = ? AND p.estado = 'ACTIVO' ORDER BY a.apellidoP ASC, a.apellidoM ASC, a.nombre ASC");
       $stmt->bind_param('i', $clubId);
       $stmt->execute();
       $res = $stmt->get_result();
       while ($row = $res->fetch_assoc()) { $rows[] = $row; }
     } else {
-      $sql = 'SELECT id, nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club, fecha_registro FROM alumnos ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC';
+      $sql = "SELECT a.id, a.nombre, a.apellidoP, a.apellidoM, a.numeroControl, a.telefono, a.carrera_id, a.semestre_id, a.id_club, a.fecha_registro FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE p.estado = 'ACTIVO' ORDER BY a.apellidoP ASC, a.apellidoM ASC, a.nombre ASC";
       if ($res = $conexion->query($sql)) {
         while ($row = $res->fetch_assoc()) { $rows[] = $row; }
       }
@@ -66,9 +46,9 @@ try {
     $payload = json_decode(file_get_contents('php://input'), true);
     if (!is_array($payload)) { $payload = []; }
 
-    $nombre = trim((string)($payload['nombre'] ?? ''));
-    $apellidoP = trim((string)($payload['apellidoP'] ?? ''));
-    $apellidoM = trim((string)($payload['apellidoM'] ?? ''));
+    $nombre = to_title_case((string)($payload['nombre'] ?? ''));
+    $apellidoP = to_title_case((string)($payload['apellidoP'] ?? ''));
+    $apellidoM = to_title_case((string)($payload['apellidoM'] ?? ''));
     $numeroControl = trim((string)($payload['numeroControl'] ?? ''));
     $telefono = trim((string)($payload['telefono'] ?? ''));
     $carrera_id = isset($payload['carrera_id']) && $payload['carrera_id'] !== '' ? (int)$payload['carrera_id'] : null;
@@ -76,11 +56,14 @@ try {
     $id_club = isset($payload['id_club']) && $payload['id_club'] !== '' ? (int)$payload['id_club'] : null;
 
     $errors = [];
-    if ($nombre === '') { $errors[] = 'nombre es requerido'; }
-    if ($apellidoP === '') { $errors[] = 'apellidoP es requerido'; }
-    if ($apellidoM === '') { $errors[] = 'apellidoM es requerido'; }
-    if ($numeroControl === '' || !preg_match('/^\d{8}$/', $numeroControl)) { $errors[] = 'numeroControl es requerido y debe tener 8 dígitos'; }
-    if ($telefono !== '' && !preg_match('/^\d{7,15}$/', $telefono)) { $errors[] = 'telefono debe ser numérico (7-15 dígitos) o vacío'; }
+    if ($nombre === '' || !is_text_only($nombre) || !starts_with_uppercase_letter($nombre)) { $errors[] = 'nombre es requerido, debe ser texto y comenzar con mayúscula'; }
+    if ($apellidoP === '' || !is_text_only($apellidoP) || !starts_with_uppercase_letter($apellidoP)) { $errors[] = 'apellidoP es requerido, debe ser texto y comenzar con mayúscula'; }
+    if ($apellidoM === '' || !is_text_only($apellidoM) || !starts_with_uppercase_letter($apellidoM)) { $errors[] = 'apellidoM es requerido, debe ser texto y comenzar con mayúscula'; }
+    if (!is_digits_only($numeroControl, 8, 8, false)) { $errors[] = 'numeroControl es requerido y debe tener 8 dígitos'; }
+    if (!is_digits_only($telefono, 7, 15, true)) { $errors[] = 'telefono debe ser numérico (7-15 dígitos) o vacío'; }
+    if ($carrera_id !== null && $carrera_id <= 0) { $errors[] = 'carrera_id debe ser numérico'; }
+    if ($semestre_id !== null && $semestre_id <= 0) { $errors[] = 'semestre_id debe ser numérico'; }
+    if ($id_club !== null && $id_club <= 0) { $errors[] = 'id_club debe ser numérico'; }
 
     if (!empty($errors)) {
       http_response_code(422);
@@ -88,8 +71,8 @@ try {
       exit;
     }
 
-    // Validar duplicado por numeroControl
-    $stmtCheck = $conexion->prepare('SELECT id FROM alumnos WHERE numeroControl = ? LIMIT 1');
+    // Validar duplicado por numeroControl en el periodo activo
+    $stmtCheck = $conexion->prepare("SELECT a.id FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.numeroControl = ? AND p.estado = 'ACTIVO' LIMIT 1");
     $stmtCheck->bind_param('s', $numeroControl);
     $stmtCheck->execute();
     $stmtCheck->store_result();
@@ -100,7 +83,7 @@ try {
     }
 
     // Insert
-    $sql = 'INSERT INTO alumnos (nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    $sql = "INSERT INTO alumnos (nombre, apellidoP, apellidoM, numeroControl, telefono, carrera_id, semestre_id, id_club, periodo_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1))";
     $stmt = $conexion->prepare($sql);
 
     // Normalizar nullables
@@ -158,9 +141,9 @@ try {
       exit;
     }
 
-    $nombre = array_key_exists('nombre', $payload) ? trim((string)$payload['nombre']) : $cur['nombre'];
-    $apellidoP = array_key_exists('apellidoP', $payload) ? trim((string)$payload['apellidoP']) : $cur['apellidoP'];
-    $apellidoM = array_key_exists('apellidoM', $payload) ? trim((string)$payload['apellidoM']) : $cur['apellidoM'];
+    $nombre = array_key_exists('nombre', $payload) ? to_title_case((string)$payload['nombre']) : $cur['nombre'];
+    $apellidoP = array_key_exists('apellidoP', $payload) ? to_title_case((string)$payload['apellidoP']) : $cur['apellidoP'];
+    $apellidoM = array_key_exists('apellidoM', $payload) ? to_title_case((string)$payload['apellidoM']) : $cur['apellidoM'];
     $numeroControl = array_key_exists('numeroControl', $payload) ? trim((string)$payload['numeroControl']) : $cur['numeroControl'];
     $telefono = array_key_exists('telefono', $payload) ? trim((string)$payload['telefono']) : $cur['telefono'];
     $carrera_id = array_key_exists('carrera_id', $payload) ? ($payload['carrera_id'] !== '' ? (int)$payload['carrera_id'] : null) : $cur['carrera_id'];
@@ -169,15 +152,29 @@ try {
 
     // Validaciones básicas
     $errors = [];
-    if ($nombre === '') { $errors[] = 'nombre es requerido'; }
-    if ($apellidoP === '') { $errors[] = 'apellidoP es requerido'; }
-    if ($apellidoM === '') { $errors[] = 'apellidoM es requerido'; }
-    if ($numeroControl === '' || !preg_match('/^\d{8}$/', $numeroControl)) { $errors[] = 'numeroControl debe tener 8 dígitos'; }
-    if ($telefono !== '' && $telefono !== null && !preg_match('/^\d{7,15}$/', $telefono)) { $errors[] = 'telefono debe ser numérico (7-15 dígitos) o vacío'; }
+    if ($nombre === '' || !is_text_only($nombre) || !starts_with_uppercase_letter($nombre)) { $errors[] = 'nombre es requerido, debe ser texto y comenzar con mayúscula'; }
+    if ($apellidoP === '' || !is_text_only($apellidoP) || !starts_with_uppercase_letter($apellidoP)) { $errors[] = 'apellidoP es requerido, debe ser texto y comenzar con mayúscula'; }
+    if ($apellidoM === '' || !is_text_only($apellidoM) || !starts_with_uppercase_letter($apellidoM)) { $errors[] = 'apellidoM es requerido, debe ser texto y comenzar con mayúscula'; }
+    if (!is_digits_only($numeroControl, 8, 8, false)) { $errors[] = 'numeroControl debe tener 8 dígitos'; }
+    if (!is_digits_only($telefono, 7, 15, true)) { $errors[] = 'telefono debe ser numérico (7-15 dígitos) o vacío'; }
+    if ($carrera_id !== null && $carrera_id <= 0) { $errors[] = 'carrera_id debe ser numérico'; }
+    if ($semestre_id !== null && $semestre_id <= 0) { $errors[] = 'semestre_id debe ser numérico'; }
+    if ($id_club !== null && $id_club <= 0) { $errors[] = 'id_club debe ser numérico'; }
 
     if (!empty($errors)) {
       http_response_code(422);
       echo json_encode(['error' => 'Validación', 'details' => $errors]);
+      exit;
+    }
+
+    // Validar duplicado por numeroControl al actualizar en el periodo activo
+    $stmtCheck = $conexion->prepare("SELECT a.id FROM alumnos a JOIN periodos p ON a.periodo_id = p.id WHERE a.numeroControl = ? AND a.id <> ? AND p.estado = 'ACTIVO' LIMIT 1");
+    $stmtCheck->bind_param('si', $numeroControl, $id);
+    $stmtCheck->execute();
+    $stmtCheck->store_result();
+    if ($stmtCheck->num_rows > 0) {
+      http_response_code(409);
+      echo json_encode(['error' => 'Duplicado', 'message' => 'El número de control ya existe']);
       exit;
     }
 
@@ -215,3 +212,4 @@ try {
   echo json_encode(['error' => 'Excepción', 'message' => $e->getMessage()]);
   exit;
 }
+

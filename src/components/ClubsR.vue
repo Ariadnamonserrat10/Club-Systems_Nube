@@ -2,7 +2,12 @@
   <div>
     <h3>Clubs registrados</h3>
     <div class="d-flex justify-content-between align-items-center my-3">
-      <button class="btn btn-success" @click="openModal">Agregar club</button>
+      <div>
+        <button class="btn btn-success me-2" @click="openModal">Agregar club</button>
+        <button class="btn btn-outline-secondary" @click="$emit('refresh')" title="Refrescar lista">
+          <i class="bi bi-arrow-clockwise"></i> Refrescar
+        </button>
+      </div>
     </div>
 
     <div v-if="clubs && clubs.length">
@@ -10,6 +15,7 @@
         <thead class="table-primary">
           <tr>
             <th>Nombre</th>
+            <th>Tipo</th>
             <th>Descripción</th>
             <th>Cupo</th>
             <th>Ocupados</th>
@@ -20,12 +26,17 @@
           <!-- Usamos clubsConOcupados en lugar de clubs -->
           <tr v-for="(club, index) in clubsConOcupados" :key="(club.id || club.nombre) + '-' + index">
             <td>{{ club.nombre }}</td>
+            <td>
+              <span :class="['badge', club.tipo === 'DEPORTIVO' ? 'bg-primary' : 'bg-secondary']">
+                {{ club.tipo || 'CULTURAL' }}
+              </span>
+            </td>
             <td>{{ club.descripcion }}</td>
             <td>{{ club.cupo }}</td>
             <td>{{ club.ocupados }}</td>
             <td>
-              <button class="btn btn-warning btn-sm me-2" @click="startEdit(index)">Editar</button>
-              <button class="btn btn-danger btn-sm" @click="confirmDelete(index)">Eliminar</button>
+              <button class="btn btn-warning btn-sm me-2" @click="startEdit(club)">Editar</button>
+              <button class="btn btn-danger btn-sm" @click="confirmDelete(club)">Eliminar</button>
             </td>
           </tr>
         </tbody>
@@ -42,9 +53,29 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <input v-model="localClub.nombre" class="form-control mb-2" placeholder="Nombre del club" />
-            <input v-model="localClub.descripcion" class="form-control mb-2" placeholder="Descripción" />
-            <input v-model.number="localClub.cupo" type="number" min="1" class="form-control mb-2" placeholder="Cupo máximo" />
+            <div class="mb-2">
+              <label class="form-label mb-1 fw-semibold">Nombre del club</label>
+              <input v-model="localClub.nombre" class="form-control" placeholder="Ej: Danza Folclórica" @input="soloTextoClub" />
+              <div class="form-text">Solo letras y espacios. Cada palabra debe iniciar con mayúscula.</div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label mb-1 fw-semibold">Tipo de club</label>
+              <select v-model="localClub.tipo" class="form-select">
+                <option value="CULTURAL">Cultural (danza, teatro, música…)</option>
+                <option value="DEPORTIVO">Deportivo (fútbol, voleibol, basquetbol…)</option>
+              </select>
+              <div class="form-text">Selecciona la categoría que corresponde a la actividad del club.</div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label mb-1 fw-semibold">Descripción</label>
+              <input v-model="localClub.descripcion" class="form-control" placeholder="Ej: Grupo De Baile Tradicional" @input="soloTextoDescripcion" />
+              <div class="form-text">Descripción breve de la actividad que realiza el club.</div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label mb-1 fw-semibold">Cupo máximo</label>
+              <input v-model.number="localClub.cupo" type="number" min="1" max="50" class="form-control" placeholder="Ej: 25" />
+              <div class="form-text">Número máximo de alumnos permitidos (entre 1 y 50).</div>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -83,7 +114,7 @@ export default {
   props: ['clubs', 'fechas', 'alumnos'],
   data() {
     return {
-      localClub: { nombre: '', descripcion: '', cupo: 0 },
+      localClub: { nombre: '', tipo: 'CULTURAL', descripcion: '', cupo: 0 },
       editingIndex: null,
       pendingDeleteIndex: null
     };
@@ -106,6 +137,7 @@ export default {
         // Normalización de campos desde la BD
         const id = c.id ?? c.ID ?? c.id_club ?? null;
         const nombre = c.nombre ?? c.Name ?? c.titulo ?? '';
+        const tipo = c.tipo ?? c.Type ?? 'CULTURAL';
         const descripcion = c.descripcion ?? c.description ?? '';
         const cupo = c.cupo != null ? c.cupo : c.cupo_limite != null ? c.cupo_limite : 0;
         // Preferimos valor de BD si existe
@@ -145,42 +177,111 @@ export default {
           ocupados = Math.max(ocupadosPorId, ocupadosPorNombre);
         }
 
-        return { ...c, id, nombre, descripcion, cupo, ocupados };
+        return { ...c, id, nombre, tipo, descripcion, cupo, ocupados };
       });
     }
   },
   methods: {
+    emitError(msg) {
+      this.$emit('show-error', msg);
+    },
+    normalizarTexto(valor) {
+      // No forzar trim/capitalización mientras el usuario escribe para no romper espacios.
+      return (valor || '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '');
+    },
+    formatearTitulo(valor) {
+      const limpio = (valor || '')
+        .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!limpio) return '';
+      return limpio
+        .split(' ')
+        .map((p) => p ? (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()) : '')
+        .join(' ');
+    },
+    soloTextoClub() {
+      this.localClub.nombre = this.normalizarTexto(this.localClub.nombre);
+    },
+    soloTextoDescripcion() {
+      this.localClub.descripcion = this.normalizarTexto(this.localClub.descripcion);
+    },
     openModal() {
       this.editingIndex = null;
-      this.localClub = { nombre: '', descripcion: '', cupo: 0 };
+      this.localClub = { nombre: '', tipo: 'CULTURAL', descripcion: '', cupo: 0 };
       new bootstrap.Modal(document.getElementById('modalClubsR')).show();
     },
-    startEdit(index) {
-      this.editingIndex = index;
-      const c = this.clubs[index];
-      this.localClub = { nombre: c.nombre, descripcion: c.descripcion, cupo: c.cupo };
+    startEdit(club) {
+      this.editingIndex = club?.id ?? null;
+      const c = club || {};
+      this.localClub = { nombre: c.nombre, tipo: c.tipo || 'CULTURAL', descripcion: c.descripcion, cupo: c.cupo };
       new bootstrap.Modal(document.getElementById('modalClubsR')).show();
+    },
+    validarClub() {
+      const nombre = (this.localClub.nombre || '').trim();
+      const descripcion = (this.localClub.descripcion || '').trim();
+      const cupo = Number(this.localClub.cupo);
+
+      if (!nombre) return 'El nombre del club es obligatorio.';
+      if (nombre.length > 100) return 'El nombre debe tener máximo 100 caracteres.';
+      if (!/^[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/.test(nombre)) {
+        return 'El nombre solo permite letras y espacios, y debe iniciar con mayúscula.';
+      }
+
+      if (!descripcion) return 'La descripción del club es obligatoria.';
+      if (!/^[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*$/.test(descripcion)) {
+        return 'La descripción solo permite texto y debe iniciar con mayúscula.';
+      }
+
+      if (!Number.isInteger(cupo) || cupo < 1 || cupo > 50) {
+        return 'El cupo debe ser un número entero entre 1 y 50.';
+      }
+
+      return '';
     },
     saveClub() {
-      if (!this.localClub.nombre || !this.localClub.descripcion || this.localClub.cupo <= 0) {
+      // Formatear al guardar, sin interferir con la escritura del usuario.
+      this.localClub.nombre = this.formatearTitulo(this.localClub.nombre);
+      this.localClub.descripcion = this.formatearTitulo(this.localClub.descripcion);
+      const error = this.validarClub();
+      if (error) {
         this.$emit('log', { usuario: 'Usuario Oficina', accion: 'Error', tipo: 'club', descripcion: 'Campos obligatorios' });
-        return this.$root.showError ? this.$root.showError('Todos los campos son obligatorios') : null;
+        this.emitError(error);
+        return;
       }
       if (this.editingIndex === null) {
         this.$emit('add-club', { ...this.localClub }, 'Usuario Oficina');
       } else {
-        this.$emit('edit-club', { index: this.editingIndex, club: { ...this.localClub } }, 'Usuario Oficina');
+        this.$emit('edit-club', { id: this.editingIndex, club: { ...this.localClub } }, 'Usuario Oficina');
       }
+      // Mover foco antes de cerrar para evitar el warning de aria-hidden
+      if (document.activeElement) document.activeElement.blur();
       bootstrap.Modal.getInstance(document.getElementById('modalClubsR')).hide();
     },
-    confirmDelete(index) {
-      this.pendingDeleteIndex = index;
+    confirmDelete(club) {
+      this.pendingDeleteIndex = club?.id ?? null;
       new bootstrap.Modal(document.getElementById('confirmDeleteClub')).show();
     },
     deleteConfirmed() {
       this.$emit('delete-club', this.pendingDeleteIndex, 'Usuario Oficina');
+      // Mover foco antes de cerrar para evitar el warning de aria-hidden
+      if (document.activeElement) document.activeElement.blur();
       bootstrap.Modal.getInstance(document.getElementById('confirmDeleteClub')).hide();
     }
+  },
+  mounted() {
+    // Solución global al warning de aria-hidden:
+    // Cada vez que Bootstrap VAYA A ocultar cualquiera de los modales,
+    // movemos el foco fuera antes de que se aplique aria-hidden="true".
+    const blurOnHide = () => {
+      if (document.activeElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
+    };
+    ['modalClubsR', 'confirmDeleteClub'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('hide.bs.modal', blurOnHide);
+    });
   }
 };
 </script>

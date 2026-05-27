@@ -1,18 +1,16 @@
 <?php
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-header('Content-Type: application/json; charset=utf-8');
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=utf-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
+    http_response_code(200);
+    exit();
 }
 
-require_once __DIR__ . '/db.php';
+include __DIR__ . "/db.php";
 
 if (!isset($conexion) || !($conexion instanceof mysqli)) {
   if (function_exists('getMysqli') && getMysqli() instanceof mysqli) {
@@ -58,9 +56,18 @@ try {
       exit;
     }
 
-    // Obtener alumnos del club
-    $stmtA = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM FROM alumnos WHERE id_club = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
-    $stmtA->bind_param('i', $clubId);
+    // Obtener periodo activo
+    $resPeriodo = $conexion->query("SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1");
+    $periodoActivo = $resPeriodo->fetch_assoc();
+    if (!$periodoActivo) {
+      echo json_encode(['status' => 'success', 'data' => ['fechas' => [], 'asistencias' => [], 'alumnos' => []]]);
+      exit;
+    }
+    $periodo_id = $periodoActivo['id'];
+
+    // Obtener alumnos del club con datos necesarios para constancias en el periodo activo
+    $stmtA = $conexion->prepare('SELECT id, nombre, apellidoP, apellidoM, numeroControl, carrera_id, semestre_id, id_club FROM alumnos WHERE id_club = ? AND periodo_id = ? ORDER BY apellidoP ASC, apellidoM ASC, nombre ASC');
+    $stmtA->bind_param('ii', $clubId, $periodo_id);
     $stmtA->execute();
     $resA = $stmtA->get_result();
     $alumnos = [];
@@ -74,26 +81,15 @@ try {
     }
 
     // Obtener asistencias para esos alumnos
-    $placeholders = implode(',', array_fill(0, count($alumnoIds), '?'));
-    $types = str_repeat('i', count($alumnoIds));
-    $stmt = $conexion->prepare("SELECT id_alumno, fecha, presente FROM asistencias WHERE id_alumno IN ($placeholders) ORDER BY fecha ASC");
-    
-    if (!$stmt) {
-      error_log("Error preparando SELECT asistencias: " . $conexion->error);
+    // Usamos los IDs directamente porque ya fueron castados a (int) arriba → seguro contra inyección
+    $idsStr = implode(',', $alumnoIds);
+    $res = $conexion->query("SELECT id_alumno, fecha, presente FROM asistencias WHERE id_alumno IN ($idsStr) ORDER BY fecha ASC");
+
+    if (!$res) {
+      error_log("Error ejecutando SELECT asistencias: " . $conexion->error);
       echo json_encode(['status' => 'success', 'data' => ['fechas' => [], 'asistencias' => [], 'alumnos' => $alumnos]]);
       exit;
     }
-    
-    // Usar call_user_func_array para evitar problemas con spread operator
-    call_user_func_array([$stmt, 'bind_param'], array_merge([$types], $alumnoIds));
-    
-    if (!$stmt->execute()) {
-      error_log("Error ejecutando SELECT asistencias: " . $stmt->error);
-      echo json_encode(['status' => 'success', 'data' => ['fechas' => [], 'asistencias' => [], 'alumnos' => $alumnos]]);
-      exit;
-    }
-    
-    $res = $stmt->get_result();
 
     $fechasSet = [];
     $asistencias = []; // { id_alumno: { 'YYYY-MM-DD': bool } }
@@ -106,17 +102,13 @@ try {
       $asistencias[$aid][$fecha] = $pres;
     }
 
-    // Las fechas ya están en $fechasSet desde la consulta de asistencias
     $fechas = array_keys($fechasSet);
     sort($fechas);
-    
-    error_log("Total de fechas encontradas: " . count($fechas));
-    error_log("Fechas: " . json_encode($fechas));
 
     echo json_encode(['status' => 'success', 'data' => [
-      'fechas' => $fechas,
+      'fechas'      => $fechas,
       'asistencias' => $asistencias,
-      'alumnos' => $alumnos
+      'alumnos'     => $alumnos
     ]]);
     exit;
   }
@@ -125,6 +117,14 @@ try {
     // POST body: { club_id, fecha: 'YYYY-MM-DD', registros: [{ alumno_id, presente }] }
     $payload = json_decode(file_get_contents('php://input'), true);
     if (!is_array($payload)) $payload = [];
+
+    // Validar periodo activo
+    $resPeriodo = $conexion->query("SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1");
+    if ($resPeriodo->num_rows === 0) {
+      http_response_code(403);
+      echo json_encode(['status' => 'error', 'message' => 'No se pueden registrar asistencias porque el periodo está cerrado.']);
+      exit;
+    }
 
     $clubId = isset($payload['club_id']) ? (int)$payload['club_id'] : 0;
     $fecha = isset($payload['fecha']) ? trim((string)$payload['fecha']) : '';
@@ -193,6 +193,14 @@ try {
     $payload = json_decode(file_get_contents('php://input'), true);
     if (!is_array($payload)) $payload = [];
 
+    // Validar periodo activo
+    $resPeriodo = $conexion->query("SELECT id FROM periodos WHERE estado = 'ACTIVO' LIMIT 1");
+    if ($resPeriodo->num_rows === 0) {
+      http_response_code(403);
+      echo json_encode(['status' => 'error', 'message' => 'No se pueden registrar asistencias porque el periodo está cerrado.']);
+      exit;
+    }
+
     $alumnoId = isset($payload['alumno_id']) ? (int)$payload['alumno_id'] : 0;
     $fecha = isset($payload['fecha']) ? trim((string)$payload['fecha']) : '';
     $presente = !empty($payload['presente']) ? 1 : 0;
@@ -222,3 +230,4 @@ try {
   http_response_code(500);
   echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
+
