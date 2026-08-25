@@ -412,6 +412,7 @@ import Reinscripciones from "../components/Reinscripciones.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
 import axios from "axios";
 import jsPDF from "jspdf";
+import api from "../services/http";
 import { BACKEND } from "../services/backend";
 import { authService } from "../services/auth";
 
@@ -694,7 +695,7 @@ export default {
 
      async loadAuditoria() {
        try {
-         const response = await axios.get(`${BACKEND}/auditoria.php?limit=200`);
+         const response = await api.get('/auditoria.php?limit=200');
          if (response.data && response.data.status === 'success' && Array.isArray(response.data.data)) {
            this.auditoria = response.data.data;
          }
@@ -1818,13 +1819,13 @@ export default {
 }
 
 /* Page transitions */
-::v-deep .fade-enter-active,
-::v-deep .fade-leave-active {
+:deep(.fade-enter-active),
+:deep(.fade-leave-active) {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-::v-deep .fade-enter,
-::v-deep .fade-leave-to {
+:deep(.fade-enter),
+:deep(.fade-leave-to) {
   opacity: 0;
   transform: translateY(10px);
 }

@@ -102,7 +102,6 @@
                   class="form-input"
                   placeholder="Ingresa tu contraseña"
                   minlength="8"
-                  maxlength="8"
                   required
                   autocomplete="current-password"
                 />
@@ -271,8 +270,8 @@ export default {
         return;
       }
       
-      if (this.password.length !== 8) {
-        this.errorMessage = "La contraseña debe tener exactamente 8 caracteres";
+      if (this.password.length < 8) {
+        this.errorMessage = "La contraseña debe tener al menos 8 caracteres";
         return;
       }
       

@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost/Backend',
+        target: 'http://localhost/Club-Systems_Nube/Backend',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

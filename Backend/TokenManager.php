@@ -360,7 +360,8 @@ class TokenManager {
             DELETE FROM tokens 
             WHERE user_id = ? AND tipo = ? AND (expires_at < NOW() OR activo = 0)
         ");
-        $stmt->bind_param('is', $userId, self::TYPE_CSRF);
+        $tipoCsrf = self::TYPE_CSRF;
+        $stmt->bind_param('is', $userId, $tipoCsrf);
         $stmt->execute();
         $stmt->close();
         
@@ -420,7 +421,8 @@ class TokenManager {
             return false;
         }
         
-        $stmt->bind_param('sss', $selector, $hashedToken, self::TYPE_PASSWORD_RESET);
+        $tipoReset = self::TYPE_PASSWORD_RESET;
+        $stmt->bind_param('sss', $selector, $hashedToken, $tipoReset);
         $result = $stmt->execute();
         $affected = $stmt->affected_rows > 0;
         $stmt->close();

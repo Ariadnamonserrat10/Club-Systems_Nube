@@ -9,6 +9,21 @@ require_once __DIR__ . "/AuditHelper.php";
 
 session_start();
 
+// Si se pasa ?reset=1 se limpia el rate limiter (para debugging)
+if (isset($_GET['reset'])) {
+    $key = "rate_" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . "_";
+    foreach ($_SESSION as $k => $v) {
+        if (strpos($k, $key) === 0) {
+            unset($_SESSION[$k]);
+        }
+    }
+    if ($_GET['reset'] === '1') {
+        http_response_code(200);
+        echo json_encode(["status" => "ok", "message" => "Rate limit reset"]);
+        exit;
+    }
+}
+
 $tokenManager = new TokenManager();
 
 function checkRateLimit($usuario, $maxAttempts = 5, $windowSeconds = 300) {
