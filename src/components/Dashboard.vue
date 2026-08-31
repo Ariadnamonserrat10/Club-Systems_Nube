@@ -3,7 +3,7 @@
     <div class="row g-4">
       <!-- Bienvenida -->
       <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #080A4C 0%, #050630 100%);">
+        <div class="card border-0 shadow-sm" :style="{ background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColorEnd} 100%)` }">
           <div class="card-body text-white py-4">
             <h2 class="mb-1">Bienvenido, {{ usuarioNombre }}</h2>
             <p class="mb-0 opacity-75">{{ fechaActual }}</p>
@@ -91,24 +91,42 @@
 
       <!-- Clubes con más detalle -->
       <div class="col-12 mt-2">
-        <h5 class="text-muted mb-3">Clubes del Periodo</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="text-muted mb-0">Clubes del Periodo</h5>
+          <button v-if="isSuperAdmin" class="btn btn-success" @click="abrirNuevoClub">
+            + Agregar club
+          </button>
+        </div>
       </div>
 
       <div
-        v-for="club in clubsOrdenados"
+        v-for="club in clubsVisibles"
         :key="club.id"
-        class="col-md-6 col-lg-4"
+        :class="clubSeleccionado?.id === club.id ? 'col-12' : 'col-md-6 col-lg-4'"
+        class="club-column"
       >
-        <div class="card border-0 shadow-sm h-100">
+        <div
+          class="card shadow-sm club-card"
+          :class="{ 'club-card-selected': clubSeleccionado?.id === club.id, 'border-0': clubSeleccionado?.id !== club.id }"
+          role="button"
+          tabindex="0"
+          @click="seleccionarClub(club)"
+          @keydown.enter="seleccionarClub(club)"
+        >
           <div
-            :class="['card-header', 'text-white', club.tipo === 'DEPORTIVO' ? 'bg-primary' : 'bg-secondary']"
+            class="card-header text-white"
+            :style="{ backgroundColor: club.tipo === 'DEPORTIVO' ? themeColor : '#64748b' }"
           >
             <div class="d-flex justify-content-between align-items-center">
               <span class="fw-bold">{{ club.nombre }}</span>
-              <span class="badge bg-light text-dark">{{ club.tipo }}</span>
+              <div class="d-flex align-items-center gap-2">
+                <span v-if="clubSeleccionado?.id === club.id" class="badge selected-badge">Seleccionado</span>
+                <span class="badge bg-light text-dark">{{ club.tipo }}</span>
+              </div>
             </div>
           </div>
           <div class="card-body">
+            <p class="text-muted small club-description">{{ club.descripcion || 'Sin descripción registrada.' }}</p>
             <div class="row text-center">
               <div class="col-6">
                 <div class="h4 mb-0">{{ club.ocupados }}</div>
@@ -131,16 +149,47 @@
                 {{ club.ocupados >= club.cupo ? 'Cupo lleno' : `${club.cupo - club.ocupados} lugares disponibles` }}
               </small>
             </div>
+            <Transition name="action-buttons">
+            <div v-if="isSuperAdmin && clubSeleccionado?.id === club.id" class="d-flex gap-2 mt-3" @click.stop>
+              <button class="btn btn-warning btn-sm flex-grow-1" @click.stop="abrirEditarClub(club)">Editar club</button>
+              <button class="btn btn-danger btn-sm flex-grow-1" @click.stop="eliminarClubDirecto(club)">Eliminar club</button>
+            </div>
+            </Transition>
           </div>
         </div>
+
+        <Transition name="club-expand">
+          <div v-if="clubSeleccionado?.id === club.id" class="card border-0 shadow-sm club-detail mt-3" @click.stop>
+            <div class="card-header text-white d-flex justify-content-between align-items-center" :style="{ backgroundColor: themeColor }">
+              <div><strong>{{ club.nombre }}</strong><span class="ms-2 opacity-75">Lista y asistencias</span></div>
+              <button class="btn btn-sm btn-light" @click.stop="cerrarClub">Cerrar</button>
+            </div>
+            <div class="card-body">
+              <div v-if="cargandoDetalle" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Cargando asistencias...</div>
+              <div v-else-if="errorDetalle" class="alert alert-danger mb-0">{{ errorDetalle }}</div>
+              <div v-else class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead><tr><th>Alumno</th><th>Número de control</th><th v-for="fecha in detalleClub.fechas" :key="fecha" class="text-center">{{ fechaCorta(fecha) }}</th><th class="text-center">Faltas</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr v-for="alumno in detalleClub.alumnos" :key="alumno.id"><td>{{ nombreAlumno(alumno) }}</td><td>{{ alumno.numeroControl }}</td><td v-for="fecha in detalleClub.fechas" :key="fecha" class="text-center"><span :class="asistio(alumno.id, fecha) ? 'text-success' : 'text-danger'">{{ asistio(alumno.id, fecha) ? '✓' : '✕' }}</span></td><td class="text-center fw-bold">{{ faltasAlumno(alumno.id) }}</td><td><span class="badge" :class="faltasAlumno(alumno.id) < 3 ? 'bg-success' : 'bg-danger'">{{ faltasAlumno(alumno.id) < 3 ? 'Acreditado' : 'No acreditado' }}</span></td></tr>
+                    <tr v-if="!detalleClub.alumnos.length"><td :colspan="detalleClub.fechas.length + 4" class="text-center text-muted py-4">No hay alumnos inscritos en este club.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
+
+      <!-- El gestor solo aporta los modales. La lista principal son las tarjetas de arriba. -->
+      <ClubsR ref="gestorClubs" :clubs="clubs" :alumnos="alumnos" :can-manage="isSuperAdmin" :modal-only="true" @add-club="reenviarAgregar" @edit-club="reenviarEditar" @delete-club="reenviarEliminar" @refresh="$emit('refresh')" @log="$emit('log', $event)" @show-error="$emit('show-error', $event)" />
 
       <!-- Acciones rápidas -->
       <div class="col-12 mt-2">
         <h5 class="text-muted mb-3">Acciones Rápidas</h5>
       </div>
 
-      <div class="col-md-3">
+      <div v-if="isSuperAdmin" class="col-md-3">
         <button class="btn btn-outline-primary w-100 py-3" @click="$emit('navigate', 'Gestion')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="me-2">
             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -150,7 +199,7 @@
       </div>
 
       <div class="col-md-3">
-        <button class="btn btn-outline-success w-100 py-3" @click="$emit('navigate', 'ClubsR')">
+        <button class="btn btn-outline-success w-100 py-3" @click="volverAClubs">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="me-2">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
@@ -180,14 +229,25 @@
 </template>
 
 <script>
+import ClubsR from './ClubsR.vue';
+import { getAsistenciasPorClub } from '../services/api';
+
 export default {
   name: "Dashboard",
-  props: ["clubs", "usuarios", "alumnos", "periodoActivo"],
-  emits: ["navigate"],
+  components: { ClubsR },
+  props: ["clubs", "usuarios", "alumnos", "periodoActivo", "usuarioActual"],
+  emits: ["navigate", "add-club", "edit-club", "delete-club", "refresh", "log", "show-error"],
+  data() {
+    return { clubSeleccionado: null, detalleClub: { fechas: [], alumnos: [], asistencias: {} }, cargandoDetalle: false, errorDetalle: '' };
+  },
   computed: {
+    rolActual() { return this.usuarioActual?.rol || this.usuarioActual?.tipo || 'ADMIN'; },
+    isSuperAdmin() { return this.rolActual === 'SUPERADMIN'; },
+    themeColor() { return this.rolActual === 'ADMIN' ? '#4c38ff' : '#080A4C'; },
+    themeColorEnd() { return this.rolActual === 'ADMIN' ? '#3927d8' : '#050630'; },
     usuarioNombre() {
-      const nombre = this.$parent?.usuarioActual?.nombre || "Usuario";
-      const apellidoP = this.$parent?.usuarioActual?.apellidoP || "";
+      const nombre = this.usuarioActual?.nombre || "Usuario";
+      const apellidoP = this.usuarioActual?.apellidoP || "";
       return `${nombre} ${apellidoP}`.trim() || "Usuario";
     },
     fechaActual() {
@@ -229,9 +289,50 @@ export default {
         const diff = (tipoOrden[a.tipo] || 3) - (tipoOrden[b.tipo] || 3);
         return diff !== 0 ? diff : (a.nombre || "").localeCompare(b.nombre || "");
       });
+    },
+    clubsVisibles() {
+      if (!this.clubSeleccionado) return this.clubsOrdenados;
+      const seleccionado = this.clubsOrdenados.find(club => club.id === this.clubSeleccionado.id);
+      return seleccionado ? [seleccionado] : [];
     }
   },
   methods: {
+    abrirNuevoClub() {
+      if (!this.isSuperAdmin) return;
+      this.$nextTick(() => this.$refs.gestorClubs?.openModal());
+    },
+    abrirEditarClub(club) {
+      if (!this.isSuperAdmin) return;
+      this.$nextTick(() => this.$refs.gestorClubs?.startEdit(club));
+    },
+    volverAClubs() {
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    eliminarClubDirecto(club) {
+      if (!this.isSuperAdmin) return;
+      if (window.confirm(`¿Seguro que deseas eliminar el club "${club.nombre}"?`)) {
+        this.$emit('delete-club', club.id, 'Super Administrador');
+      }
+    },
+    reenviarAgregar(...args) { this.$emit('add-club', ...args); },
+    reenviarEditar(...args) { this.$emit('edit-club', ...args); },
+    reenviarEliminar(...args) { this.$emit('delete-club', ...args); },
+    async seleccionarClub(club) {
+      if (this.clubSeleccionado?.id === club.id) {
+        this.cerrarClub();
+        return;
+      }
+      this.clubSeleccionado = club; this.cargandoDetalle = true; this.errorDetalle = '';
+      try { this.detalleClub = await getAsistenciasPorClub(club.id); } catch (error) { this.errorDetalle = error.message || 'No se pudieron cargar las asistencias'; } finally { this.cargandoDetalle = false; }
+    },
+    cerrarClub() {
+      this.clubSeleccionado = null;
+      this.errorDetalle = '';
+    },
+    nombreAlumno(alumno) { return `${alumno.nombre || ''} ${alumno.apellidoP || ''} ${alumno.apellidoM || ''}`.replace(/\s+/g, ' ').trim(); },
+    asistio(id, fecha) { return Boolean(this.detalleClub.asistencias?.[id]?.[fecha]); },
+    faltasAlumno(id) { return this.detalleClub.fechas.filter(fecha => !this.asistio(id, fecha)).length; },
+    fechaCorta(fecha) { const parts = String(fecha).split('-'); return parts.length === 3 ? `${parts[2]}/${parts[1]}` : fecha; },
     formatearFecha(fecha) {
       if (!fecha) return '-';
       const opts = { day: 'numeric', month: 'long', year: 'numeric' };
@@ -268,6 +369,43 @@ export default {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+.club-card { cursor: pointer; }
+.club-card:focus { outline: 3px solid rgba(76, 56, 255, 0.3); }
+.club-card-selected {
+  border: 4px solid rgba(76, 56, 255, 0.42) !important;
+  box-shadow: 0 0 0 5px rgba(76, 56, 255, 0.08), 0 12px 28px rgba(76, 56, 255, 0.18) !important;
+}
+.selected-badge {
+  color: #4c38ff;
+  background: #ffffff;
+  border: 1px solid rgba(76, 56, 255, 0.25);
+}
+.action-buttons-enter-active,
+.action-buttons-leave-active { transition: opacity 0.2s ease, transform 0.25s ease; }
+.action-buttons-enter-from,
+.action-buttons-leave-to { opacity: 0; transform: translateY(-8px); }
+.club-detail { scroll-margin-top: 1rem; }
+.club-column { transition: width 0.3s ease, flex-basis 0.3s ease; }
+.club-expand-enter-active,
+.club-expand-leave-active {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
+}
+.club-expand-enter-from,
+.club-expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: scaleY(0.96);
+  transform-origin: top;
+}
+.club-expand-enter-to,
+.club-expand-leave-from {
+  max-height: 1200px;
+  opacity: 1;
+  transform: scaleY(1);
+  transform-origin: top;
+}
+.club-description { min-height: 2.5rem; }
 .btn {
   border-radius: 10px;
   font-weight: 500;
@@ -296,5 +434,32 @@ export default {
 }
 .progress-bar {
   transition: width 0.3s ease;
+}
+
+@media (max-width: 1366px) {
+  .dashboard .row { --bs-gutter-x: 1.15rem; --bs-gutter-y: 1.15rem; }
+  .stat-icon { width: 48px; height: 48px; padding: 0.7rem !important; }
+}
+
+@media (max-width: 900px) {
+  .dashboard { width: 100%; }
+  .club-column { width: 100%; }
+  .club-detail .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .club-detail table { min-width: 720px; }
+}
+
+@media (max-width: 576px) {
+  .dashboard > .row { --bs-gutter-x: 0.75rem; --bs-gutter-y: 0.85rem; }
+  .dashboard h2 { font-size: 1.35rem; }
+  .dashboard .card-body.text-white { padding: 1.15rem !important; }
+  .dashboard .col-md-3 .card-body { padding: 0.9rem; }
+  .stat-icon { width: 44px; height: 44px; margin-right: 0.75rem !important; }
+  .club-card .card-header, .club-detail .card-header { padding: 0.75rem; }
+  .club-description { min-height: 0; }
+  .club-card-selected { border-width: 3px !important; }
+  .action-buttons-enter-active + * { clear: both; }
+  .club-card .d-flex.gap-2.mt-3 { flex-direction: column; }
+  .club-card .d-flex.gap-2.mt-3 .btn { width: 100%; }
+  .selected-badge { display: none; }
 }
 </style>

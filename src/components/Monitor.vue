@@ -326,7 +326,7 @@ export default {
         const usuarioId = sessionStorage.getItem("usuarioId");
         if (!usuarioId) return;
 
-        const response = await axios.get(`${BACKEND}/obtenerUsuario.php?id=${usuarioId}`);
+        const response = await axios.get(`${BACKEND}/usuarios/${usuarioId}`, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
 
         if (response.data?.status === "success") {
           const datos = response.data.data;
@@ -351,7 +351,7 @@ export default {
       try {
         let alumnosClub = [];
         try {
-          const res = await fetch(`${BACKEND}/Alumnos.php?club_id=${encodeURIComponent(clubId)}`);
+          const res = await fetch(`${BACKEND}/alumnos?club_id=${encodeURIComponent(clubId)}`, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
           const json = await res.json();
           if (res.ok && json && Array.isArray(json.data)) {
             alumnosClub = json.data;

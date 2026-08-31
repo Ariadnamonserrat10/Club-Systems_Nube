@@ -245,7 +245,7 @@ const prevStep = () => {
 
 const obtenerClubs = async () => {
   try {
-    const res = await axios.get(`${BACKEND}/Clubs.php`);
+    const res = await axios.get(`${BACKEND}/clubs`, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
     clubs.value = res.data.data;
   } catch (err) {
     // Silencioso en producción
@@ -319,7 +319,7 @@ const handleRegister = async () => {
       club_asignado: selectedClubId.value ? Number(selectedClubId.value) : null,
     };
 
-    const response = await axios.post(`${BACKEND}/Registrar.php`, payload);
+    const response = await axios.post(`${BACKEND}/usuarios`, payload, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
 
     if (response.data.status === "success") {
       registeredUser.value = {

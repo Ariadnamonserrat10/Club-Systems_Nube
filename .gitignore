@@ -1,3 +1,10 @@
 node_modules/
 dist/
 release/
+.nuxt/
+.output/
+.data/
+.env
+uploads/
+
+.env

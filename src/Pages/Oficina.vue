@@ -22,7 +22,7 @@
     <!-- Sidebar -->
     <div
       class="sidebar"
-      :class="{ 'sidebar-collapsed': sidebarCollapsed, 'sidebar-mobile-open': sidebarOpen }"
+      :class="{ 'sidebar-collapsed': sidebarCollapsed, 'sidebar-mobile-open': sidebarOpen, 'sidebar-admin': isAdmin, 'sidebar-superadmin': isSuperAdmin }"
     >
       <div class="sidebar-inner">
         <!-- Logo / App Name -->
@@ -67,7 +67,7 @@
             <span class="profile-name">{{ usuarioActual.nombre }} {{ usuarioActual.apellidoP }}</span>
             <span class="profile-role">
               <span class="role-dot"></span>
-              {{ usuarioActual.tipo === 'OFICINA' ? 'Oficina' : usuarioActual.tipo }}
+              {{ usuarioActual.rol || (usuarioActual.tipo === 'OFICINA' ? 'ADMIN' : usuarioActual.tipo) }}
             </span>
           </div>
         </div>
@@ -76,11 +76,12 @@
         <div class="menu-divider" v-if="!sidebarCollapsed"></div>
 
         <!-- Navigation Menu -->
-        <nav class="nav-menu">
-         <div class="menu-section">
-             <span class="menu-section-title" v-if="!sidebarCollapsed">Gestión</span>
+        <nav class="nav-menu" @click="handleNavMenuClick">
+         <div class="menu-section menu-section-open">
+             <span class="menu-section-title" v-if="!sidebarCollapsed" @click="toggleMenuSectionFromLabel">Gestión <span class="section-chevron">⌄</span></span>
              
-             <a 
+             <a
+               v-if="isSuperAdmin"
                class="nav-item" 
                :class="{ 'nav-item-active': currentView === 'Gestion' }"
                @click.prevent="setView('Gestion')"
@@ -97,10 +98,11 @@
                <span class="nav-active-indicator" v-if="currentView === 'Gestion' && !sidebarCollapsed"></span>
              </a>
 
-             <a 
+             <a
+               v-if="isSuperAdmin || isAdmin"
                class="nav-item" 
-               :class="{ 'nav-item-active': currentView === 'ClubsR' }"
-               @click.prevent="setView('ClubsR')"
+               :class="{ 'nav-item-active': currentView === 'Dashboard' }"
+               @click.prevent="setView('Dashboard')"
              >
               <span class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -113,12 +115,12 @@
                 </svg>
               </span>
               <span class="nav-label" v-if="!sidebarCollapsed">Clubs</span>
-              <span class="nav-active-indicator" v-if="currentView === 'ClubsR' && !sidebarCollapsed"></span>
+              <span class="nav-active-indicator" v-if="currentView === 'Dashboard' && !sidebarCollapsed"></span>
             </a>
           </div>
 
           <div class="menu-section">
-            <span class="menu-section-title" v-if="!sidebarCollapsed">Alumnos</span>
+            <span class="menu-section-title" v-if="!sidebarCollapsed" @click="toggleMenuSectionFromLabel">Alumnos <span class="section-chevron">⌄</span></span>
             
             <a 
               class="nav-item" 
@@ -211,10 +213,24 @@
               <span class="nav-label" v-if="!sidebarCollapsed">Reinscripciones</span>
               <span class="nav-active-indicator" v-if="currentView === 'Reinscripciones' && !sidebarCollapsed"></span>
             </a>
+
+            <a
+              class="nav-item"
+              :class="{ 'nav-item-active': currentView === 'Registros' }"
+              @click.prevent="setView('Registros')"
+            >
+              <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/>
+                </svg>
+              </span>
+              <span class="nav-label" v-if="!sidebarCollapsed">Registros y material</span>
+              <span class="nav-active-indicator" v-if="currentView === 'Registros' && !sidebarCollapsed"></span>
+            </a>
           </div>
 
           <div class="menu-section">
-            <span class="menu-section-title" v-if="!sidebarCollapsed">Reportes</span>
+            <span class="menu-section-title" v-if="!sidebarCollapsed" @click="toggleMenuSectionFromLabel">Reportes <span class="section-chevron">⌄</span></span>
             
             <a 
               class="nav-item" 
@@ -255,7 +271,7 @@
           </div>
 
           <div class="menu-section">
-            <span class="menu-section-title" v-if="!sidebarCollapsed">Sistema</span>
+            <span class="menu-section-title" v-if="!sidebarCollapsed" @click="toggleMenuSectionFromLabel">Sistema <span class="section-chevron">⌄</span></span>
             
             <a 
               class="nav-item" 
@@ -359,6 +375,8 @@
         :auditoria="auditoria"
         :carreras="carreras"
         :periodoActivo="periodoActivo"
+        :usuario-actual="usuarioActual"
+        :can-manage="isSuperAdmin"
         @add-club="handleAddClub"
         @edit-club="handleEditClub"
         @delete-club="handleDeleteClub"
@@ -409,6 +427,7 @@ import Auditoria from "../components/Auditoria.vue";
 import Evaluaciones from "../components/Evaluaciones.vue";
 import Periodos from "../components/Periodos.vue";
 import Reinscripciones from "../components/Reinscripciones.vue";
+import Registros from "../components/Registros.vue";
 import { getClubs, getAlumnos, createClub, updateClub, deleteClub, getMonitoresPorClub, getAllMonitoresWithClubs } from "../services/api";
 import axios from "axios";
 import jsPDF from "jspdf";
@@ -429,8 +448,19 @@ export default {
     Evaluaciones,
     Periodos,
     Reinscripciones,
+    Registros,
   },
   emits: ["navigate"],
+  computed: {
+    isSuperAdmin() {
+      const stored = authService.getUserData() || {};
+      return (this.usuarioActual.rol || stored.rol || stored.tipo) === 'SUPERADMIN';
+    },
+    isAdmin() {
+      const stored = authService.getUserData() || {};
+      return (this.usuarioActual.rol || stored.rol || stored.tipo) === 'ADMIN';
+    }
+  },
   data() {
      return {
       usuarioActual: {
@@ -526,7 +556,7 @@ export default {
    },
    methods: {
     checkMobile() {
-      this.isMobile = window.innerWidth < 768;
+      this.isMobile = window.innerWidth <= 900;
       if (!this.isMobile) {
         this.sidebarOpen = false;
       }
@@ -566,20 +596,9 @@ export default {
     async cargarUsuarioActual() {
       this.usuarioActualImageError = false;
       try {
-        const usuarioId = sessionStorage.getItem("usuarioId");
-    
-        if (!usuarioId) {
-          this.cerrarSesion();
-          return;
-        }
-
-        const response = await axios.get(`${BACKEND}/Usuarios.php?id=${usuarioId}`);
-
-        if (response.data.status === "success" && response.data.data) {
-          this.usuarioActual = {
-            ...response.data.data,
-            foto: response.data.data?.foto
-          };
+        const user = await authService.getCurrentUser();
+        if (user) {
+          this.usuarioActual = { ...user, foto: user.foto || null };
         } else {
           this.cerrarSesion();
           return;
@@ -592,7 +611,35 @@ export default {
      }
    },
     setView(view) {
+      if (view === 'Gestion' && !this.isSuperAdmin) {
+        this.showError('Solo el superadministrador puede gestionar usuarios');
+        return;
+      }
       this.currentView = view;
+      if (this.isMobile) this.sidebarOpen = false;
+      this.$nextTick(() => this.openMenuSectionForActive());
+    },
+    toggleMenuSectionFromLabel(event) {
+      const selected = event.currentTarget?.closest('.menu-section');
+      if (!selected) return;
+      const wasOpen = selected.classList.contains('menu-section-open');
+      selected.parentElement?.querySelectorAll('.menu-section').forEach(section => section.classList.remove('menu-section-open'));
+      if (!wasOpen) selected.classList.add('menu-section-open');
+    },
+    handleNavMenuClick(event) {
+      const title = event.target?.closest('.menu-section-title');
+      if (!title || title.hasAttribute('data-accordion-handled')) return;
+      const label = (title.textContent || '').trim().toLowerCase();
+      if (!label.startsWith('acad')) return;
+      this.toggleMenuSectionFromLabel({ currentTarget: title });
+    },
+    openMenuSectionForActive() {
+      if (typeof document === 'undefined') return;
+      const activeItem = document.querySelector('.nav-menu .nav-item-active');
+      const selected = activeItem?.closest('.menu-section');
+      if (!selected) return;
+      selected.parentElement?.querySelectorAll('.menu-section').forEach(section => section.classList.remove('menu-section-open'));
+      selected.classList.add('menu-section-open');
     },
 
     cerrarSesion() {
@@ -608,7 +655,9 @@ export default {
       try {
         const rows = await getClubs();
         // Obtener todos los monitores
-        const todosLosMonitores = await getAllMonitoresWithClubs();
+        const todosLosMonitores = this.isSuperAdmin
+          ? await getAllMonitoresWithClubs()
+          : [];
         
         // Mapear a estructura de UI
         this.clubs = rows.map((r) => ({
@@ -648,7 +697,7 @@ export default {
 
     async cargarPeriodoActivo() {
       try {
-        const res = await axios.get(`${BACKEND}/Periodos.php?action=activo`);
+        const res = await axios.get(`${BACKEND}/periodos?action=activo`);
         if (res.data.status === 'success' && res.data.data) {
           this.periodoActivo = res.data.data;
         }
@@ -695,7 +744,7 @@ export default {
 
      async loadAuditoria() {
        try {
-         const response = await api.get('/auditoria.php?limit=200');
+         const response = await api.get('/auditoria?limit=200');
          if (response.data && response.data.status === 'success' && Array.isArray(response.data.data)) {
            this.auditoria = response.data.data;
          }
@@ -706,6 +755,7 @@ export default {
 
      // ------------- Handlers emitidos por hijos -------------
     async handleAddClub(club, actor = "Usuario Oficina") {
+      if (!this.isSuperAdmin) return;
       try {
         const payload = {
           nombre: club.nombre,
@@ -745,6 +795,7 @@ export default {
     },
 
     async handleEditClub({ id, club }, actor = "Usuario Oficina") {
+      if (!this.isSuperAdmin) return;
       try {
         const index = this.clubs.findIndex((c) => Number(c.id) === Number(id));
         const current = this.clubs[index];
@@ -782,6 +833,7 @@ export default {
     },
 
     async handleDeleteClub(id, actor = "Usuario Oficina") {
+      if (!this.isSuperAdmin) return;
       try {
         const index = this.clubs.findIndex((c) => Number(c.id) === Number(id));
         const current = this.clubs[index];
@@ -1280,6 +1332,14 @@ export default {
     4px 0 16px rgba(0, 0, 0, 0.08);
 }
 
+.sidebar.sidebar-admin {
+  background: linear-gradient(180deg, #4c38ff 0%, #4c38ff 45%, #402edb 100%);
+}
+
+.sidebar.sidebar-superadmin {
+  background: linear-gradient(180deg, #080A4C 0%, #0d1b4d 30%, #0a1628 70%, #050630 100%);
+}
+
 .sidebar::before {
   content: '';
   position: absolute;
@@ -1565,15 +1625,31 @@ export default {
 .menu-section {
   margin-bottom: 8px;
 }
+.menu-section .nav-item { display: none; }
+.menu-section.menu-section-open .nav-item { display: flex; }
 
 .menu-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.65rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 8px 14px 4px;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
+.menu-section-title:hover { color: rgba(255, 255, 255, 0.8); }
+.section-chevron { transition: transform 0.25s ease; font-size: 1rem; }
+.menu-section-open .section-chevron { transform: rotate(180deg); }
+.menu-section:nth-child(3) > .menu-section-title::after {
+  content: '⌄';
+  font-size: 1rem;
+  transition: transform 0.25s ease;
+}
+.menu-section:nth-child(3).menu-section-open > .menu-section-title::after { transform: rotate(180deg); }
 
 .nav-item {
   display: flex;
@@ -1690,6 +1766,7 @@ export default {
 }
 
 .sidebar-collapsed .nav-item {
+  display: flex;
   justify-content: center;
   padding: 14px;
 }
@@ -1783,14 +1860,30 @@ export default {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+/* Laptop */
+@media (min-width: 901px) and (max-width: 1366px) {
+  .sidebar { width: 240px; }
+  .sidebar-inner { padding: 14px 10px; }
+  .content { margin-left: 240px; padding: 20px !important; }
+  .profile-section { padding: 12px 10px; }
+  .app-logo-section { margin-bottom: 14px; }
+  .nav-item { padding: 10px 12px; }
+}
+
+/* Tablet y celular */
+@media (max-width: 900px) {
   .sidebar {
     transform: translateX(-100%);
-    width: 280px;
+    width: min(86vw, 320px);
   }
 
   .content {
     margin-left: 0;
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    padding: 76px 16px 24px !important;
+    overflow-x: hidden;
   }
 
   .sidebar-collapsed {
@@ -1803,10 +1896,32 @@ export default {
 
   .app-container {
     padding-left: 0;
+    min-width: 0;
   }
+
+  :deep(.container), :deep(.container-fluid) { max-width: 100%; padding-left: 0; padding-right: 0; }
+  :deep(.row) { --bs-gutter-x: 1rem; }
+  :deep(.table-responsive), :deep(.table-scroll) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  :deep(table) { min-width: 680px; }
+  :deep(.modal-dialog) { margin: 0.75rem; max-width: calc(100vw - 1.5rem); }
+  :deep(.modal-content) { max-height: calc(100dvh - 1.5rem); overflow-y: auto; }
+  :deep(.toast-container) { left: 8px !important; right: 8px !important; width: auto; }
 }
 
-@media (min-width: 769px) {
+@media (max-width: 576px) {
+  .sidebar-toggle-mobile { top: 12px; left: 12px; width: 44px; height: 44px; }
+  .content { padding: 68px 10px 18px !important; }
+  :deep(h1) { font-size: 1.65rem; }
+  :deep(h2) { font-size: 1.4rem; }
+  :deep(h3) { font-size: 1.2rem; }
+  :deep(.card-body) { padding: 1rem; }
+  :deep(.btn) { min-height: 42px; }
+  :deep(.d-flex.justify-content-between) { flex-wrap: wrap; gap: 0.65rem; }
+  :deep(.modal-footer) { flex-wrap: wrap; }
+  :deep(.modal-footer .btn) { flex: 1 1 120px; }
+}
+
+@media (min-width: 901px) {
   .sidebar-toggle-mobile,
   .sidebar-overlay {
     display: none;

@@ -81,20 +81,20 @@ async function request(url, options = {}) {
   return data;
 }
 
-const CLUBS = `${BACKEND}/Clubs.php`;
-const ALUMNOS = `${BACKEND}/Alumnos.php`;
-const CARRERAS = `${BACKEND}/carreras.php`;
-const ASISTENCIAS = `${BACKEND}/asistencias.php`;
-const USUARIOS = `${BACKEND}/Usuarios.php`;
-const UPLOAD = `${BACKEND}/upload.php`;
-const MONITORES = `${BACKEND}/getMonitores.php`;
-const ASIGNAR = `${BACKEND}/asignarMonitor.php`;
-const EVALUACION = `${BACKEND}/evaluacion.php`;
-const SAVE_EVALUACION = `${BACKEND}/saveEvaluacion.php`;
-const GET_EVALUADOS = `${BACKEND}/getEvaluatedStudents.php`;
-const AUDITORIA = `${BACKEND}/auditoria.php`;
-const FIRMAS = `${BACKEND}/firmas.php`;
-const CONFIG = `${BACKEND}/config.php`;
+const CLUBS = `${BACKEND}/clubs`;
+const ALUMNOS = `${BACKEND}/alumnos`;
+const CARRERAS = `${BACKEND}/carreras`;
+const ASISTENCIAS = `${BACKEND}/asistencias`;
+const USUARIOS = `${BACKEND}/usuarios`;
+const UPLOAD = `${BACKEND}/archivos`;
+const MONITORES = `${BACKEND}/monitores`;
+const ASIGNAR = `${BACKEND}/monitores/asignar`;
+const EVALUACION = `${BACKEND}/evaluaciones`;
+const SAVE_EVALUACION = `${BACKEND}/evaluaciones`;
+const GET_EVALUADOS = `${BACKEND}/evaluaciones/alumnos`;
+const AUDITORIA = `${BACKEND}/auditoria`;
+const FIRMAS = `${BACKEND}/firmas`;
+const CONFIG = `${BACKEND}/config`;
 
 export const getClubs = async () => {
   const data = await request(CLUBS);
@@ -109,14 +109,14 @@ export const createClub = (payload) =>
   });
 
 export const updateClub = (id, payload) =>
-  request(`${CLUBS}?id=${id}`, {
+  request(`${CLUBS}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
 
 export const deleteClub = (id) =>
-  request(`${CLUBS}?id=${id}`, { method: 'DELETE' });
+  request(`${CLUBS}/${id}`, { method: 'DELETE' });
 
 export const getCarreras = async () => {
   const data = await request(CARRERAS);
@@ -161,14 +161,14 @@ export const getUsuarios = async () => {
 };
 
 export const updateUsuario = (id, payload) =>
-  request(`${USUARIOS}?id=${id}`, {
+  request(`${USUARIOS}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
 
 export const deleteUsuario = (id) =>
-  request(`${USUARIOS}?id=${id}`, { method: 'DELETE' });
+  request(`${USUARIOS}/${id}`, { method: 'DELETE' });
 
 export const uploadFoto = async (file) => {
   const form = new FormData();
@@ -233,7 +233,7 @@ export const createAlumno = (payload) =>
   });
 
 export const updateAlumno = (id, payload) =>
-  request(`${ALUMNOS}?id=${id}`, {
+  request(`${ALUMNOS}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -251,9 +251,34 @@ export const getEvaluatedStudents = async (clubName) => {
   return Array.isArray(data?.data) ? data.data : [];
 };
 
-export const registrarAuditoria = (payload) =>
-  request(AUDITORIA, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+export const registrarAuditoria = () => Promise.resolve({ status: 'success' });
+
+export const getPeriodoActivo = () => request(`${BACKEND}/periodos?action=activo`);
+export const getPeriodos = () => request(`${BACKEND}/periodos`);
+export const updatePeriodo = (id, payload) => request(`${BACKEND}/periodos/${id}`, {
+  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+});
+export const cerrarPeriodo = () => request(`${BACKEND}/periodos?action=cerrar`, { method: 'POST' });
+
+export const getDocumentos = async () => {
+  const data = await request(`${BACKEND}/documentos`);
+  return Array.isArray(data?.data) ? data.data : [];
+};
+export const uploadDocumento = (form) => request(`${BACKEND}/documentos`, { method: 'POST', body: form });
+export const anularDocumento = (id) => request(`${BACKEND}/documentos/${id}`, { method: 'DELETE' });
+
+export const getMateriales = async () => {
+  const data = await request(`${BACKEND}/materiales`);
+  return Array.isArray(data?.data) ? data.data : [];
+};
+export const createMaterial = (payload) => request(`${BACKEND}/materiales`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+});
+export const registrarMovimientoMaterial = (id, payload) => request(`${BACKEND}/materiales/${id}/movimientos`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+});
+
+export const getDatosMedicos = (alumnoId) => request(`${BACKEND}/alumnos/${alumnoId}/datos-medicos`);
+export const saveDatosMedicos = (alumnoId, payload) => request(`${BACKEND}/alumnos/${alumnoId}/datos-medicos`, {
+  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+});

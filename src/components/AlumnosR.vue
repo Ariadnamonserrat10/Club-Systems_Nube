@@ -366,4 +366,14 @@ export default {
     width: 100%;
   }
 }
+@media (max-width: 900px) {
+  .toolbar { flex-wrap: wrap; gap: 10px; }
+  .table { table-layout: auto; min-width: 980px; }
+  .modal-card { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; }
+}
+@media (max-width: 576px) {
+  .grid { grid-template-columns: 1fr; }
+  .modal-footer { flex-wrap: wrap; gap: 8px; }
+  .modal-footer .btn { flex: 1 1 120px; }
+}
 </style>

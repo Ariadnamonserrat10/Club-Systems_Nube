@@ -1,16 +1,16 @@
 <template>
   <div>
-    <h3>Clubs registrados</h3>
-    <div class="d-flex justify-content-between align-items-center my-3">
+    <h3 v-if="!modalOnly">Clubs registrados</h3>
+    <div v-if="!modalOnly" class="d-flex justify-content-between align-items-center my-3">
       <div>
-        <button class="btn btn-success me-2" @click="openModal">Agregar club</button>
+        <button v-if="canManage" class="btn btn-success me-2" @click="openModal">Agregar club</button>
         <button class="btn btn-outline-secondary" @click="$emit('refresh')" title="Refrescar lista">
           <i class="bi bi-arrow-clockwise"></i> Refrescar
         </button>
       </div>
     </div>
 
-    <div v-if="clubs && clubs.length">
+    <div v-if="!modalOnly && clubs && clubs.length">
       <table class="table table-bordered table-striped align-middle">
         <thead class="table-primary">
           <tr>
@@ -35,14 +35,35 @@
             <td>{{ club.cupo }}</td>
             <td>{{ club.ocupados }}</td>
             <td>
-              <button class="btn btn-warning btn-sm me-2" @click="startEdit(club)">Editar</button>
-              <button class="btn btn-danger btn-sm" @click="confirmDelete(club)">Eliminar</button>
+              <button class="btn btn-outline-primary btn-sm me-2" @click="verAsistencias(club)">Ver lista y asistencias</button>
+              <button v-if="canManage" class="btn btn-warning btn-sm me-2" @click="startEdit(club)">Editar</button>
+              <button v-if="canManage" class="btn btn-danger btn-sm" @click="confirmDelete(club)">Eliminar</button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p v-else class="text-muted">No hay clubs registrados.</p>
+    <p v-else-if="!modalOnly" class="text-muted">No hay clubs registrados.</p>
+
+    <div v-if="!modalOnly && clubSeleccionado" class="card border-0 shadow-sm mt-4">
+      <div class="card-header text-white d-flex justify-content-between align-items-center" style="background:#4c38ff">
+        <strong>{{ clubSeleccionado.nombre }} — Lista y asistencias</strong>
+        <button class="btn btn-sm btn-light" @click="clubSeleccionado = null">Cerrar</button>
+      </div>
+      <div class="card-body">
+        <div v-if="cargandoDetalle" class="text-center py-3">Cargando asistencias...</div>
+        <div v-else-if="errorDetalle" class="alert alert-danger mb-0">{{ errorDetalle }}</div>
+        <div v-else class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Alumno</th><th>Número de control</th><th v-for="fecha in detalleClub.fechas" :key="fecha" class="text-center">{{ fechaCorta(fecha) }}</th><th class="text-center">Faltas</th></tr></thead>
+            <tbody>
+              <tr v-for="alumno in detalleClub.alumnos" :key="alumno.id"><td>{{ nombreAlumno(alumno) }}</td><td>{{ alumno.numeroControl }}</td><td v-for="fecha in detalleClub.fechas" :key="fecha" class="text-center"><span :class="asistio(alumno.id, fecha) ? 'text-success' : 'text-danger'">{{ asistio(alumno.id, fecha) ? '✓' : '✕' }}</span></td><td class="text-center fw-bold">{{ faltasAlumno(alumno.id) }}</td></tr>
+              <tr v-if="!detalleClub.alumnos.length"><td :colspan="detalleClub.fechas.length + 3" class="text-center text-muted py-4">No hay alumnos inscritos en este club.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal agregar/editar -->
     <div class="modal fade" id="modalClubsR" tabindex="-1">
@@ -108,15 +129,27 @@
 </template>
 
 <script>
+import { getAsistenciasPorClub } from '../services/api';
+
 export default {
   name: 'ClubsR',
   // Ahora recibimos alumnos también
-  props: ['clubs', 'fechas', 'alumnos'],
+  props: {
+    clubs: { type: Array, default: () => [] },
+    fechas: { type: Array, default: () => [] },
+    alumnos: { type: Array, default: () => [] },
+    canManage: { type: Boolean, default: false },
+    modalOnly: { type: Boolean, default: false }
+  },
   data() {
     return {
       localClub: { nombre: '', tipo: 'CULTURAL', descripcion: '', cupo: 0 },
       editingIndex: null,
-      pendingDeleteIndex: null
+      pendingDeleteIndex: null,
+      clubSeleccionado: null,
+      detalleClub: { fechas: [], alumnos: [], asistencias: {} },
+      cargandoDetalle: false,
+      errorDetalle: ''
     };
   },
   computed: {
@@ -182,6 +215,18 @@ export default {
     }
   },
   methods: {
+    async verAsistencias(club) {
+      this.clubSeleccionado = club;
+      this.cargandoDetalle = true;
+      this.errorDetalle = '';
+      try { this.detalleClub = await getAsistenciasPorClub(club.id); }
+      catch (error) { this.errorDetalle = error.message || 'No se pudieron cargar las asistencias'; }
+      finally { this.cargandoDetalle = false; }
+    },
+    nombreAlumno(alumno) { return `${alumno.nombre || ''} ${alumno.apellidoP || ''} ${alumno.apellidoM || ''}`.replace(/\s+/g, ' ').trim(); },
+    asistio(id, fecha) { return Boolean(this.detalleClub.asistencias?.[id]?.[fecha]); },
+    faltasAlumno(id) { return this.detalleClub.fechas.filter(fecha => !this.asistio(id, fecha)).length; },
+    fechaCorta(fecha) { const parts = String(fecha).split('-'); return parts.length === 3 ? `${parts[2]}/${parts[1]}` : fecha; },
     emitError(msg) {
       this.$emit('show-error', msg);
     },
@@ -207,11 +252,13 @@ export default {
       this.localClub.descripcion = this.normalizarTexto(this.localClub.descripcion);
     },
     openModal() {
+      if (!this.canManage) return;
       this.editingIndex = null;
       this.localClub = { nombre: '', tipo: 'CULTURAL', descripcion: '', cupo: 0 };
       new bootstrap.Modal(document.getElementById('modalClubsR')).show();
     },
     startEdit(club) {
+      if (!this.canManage) return;
       this.editingIndex = club?.id ?? null;
       const c = club || {};
       this.localClub = { nombre: c.nombre, tipo: c.tipo || 'CULTURAL', descripcion: c.descripcion, cupo: c.cupo };
@@ -240,6 +287,7 @@ export default {
       return '';
     },
     saveClub() {
+      if (!this.canManage) return;
       // Formatear al guardar, sin interferir con la escritura del usuario.
       this.localClub.nombre = this.formatearTitulo(this.localClub.nombre);
       this.localClub.descripcion = this.formatearTitulo(this.localClub.descripcion);
@@ -259,10 +307,12 @@ export default {
       bootstrap.Modal.getInstance(document.getElementById('modalClubsR')).hide();
     },
     confirmDelete(club) {
+      if (!this.canManage) return;
       this.pendingDeleteIndex = club?.id ?? null;
       new bootstrap.Modal(document.getElementById('confirmDeleteClub')).show();
     },
     deleteConfirmed() {
+      if (!this.canManage) return;
       this.$emit('delete-club', this.pendingDeleteIndex, 'Usuario Oficina');
       // Mover foco antes de cerrar para evitar el warning de aria-hidden
       if (document.activeElement) document.activeElement.blur();

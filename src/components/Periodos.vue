@@ -245,8 +245,8 @@ export default {
     async cargarPeriodos() {
       try {
         const [resActivo, resTodos] = await Promise.all([
-          axios.get(`${BACKEND}/Periodos.php?action=activo`),
-          axios.get(`${BACKEND}/Periodos.php`)
+          axios.get(`${BACKEND}/periodos?action=activo`),
+          axios.get(`${BACKEND}/periodos`)
         ]);
 
         if (resActivo.data.status === 'success' && resActivo.data.data) {
@@ -280,7 +280,7 @@ async guardarCambios() {
       
       this.guardando = true;
       try {
-        const res = await axios.put(`${BACKEND}/Periodos.php?id=${this.periodoEditando.id}`, {
+        const res = await axios.put(`${BACKEND}/periodos/${this.periodoEditando.id}`, {
           nombre: this.periodoEditando.nombre,
           fecha_inicio: this.periodoEditando.fecha_inicio,
           fecha_fin: this.periodoEditando.fecha_fin,
@@ -312,7 +312,7 @@ async guardarCambios() {
       this.procesando = true;
       this.mostrarModalConfirmacion = false;
       try {
-        const res = await axios.post(`${BACKEND}/Periodos.php?action=cerrar`);
+        const res = await axios.post(`${BACKEND}/periodos?action=cerrar`);
         if (res.data.status === 'success') {
           this.$emit("log", {
             accion: "Cerrar",

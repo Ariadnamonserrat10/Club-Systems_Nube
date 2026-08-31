@@ -186,7 +186,7 @@ export default {
     async cargarCandidatos() {
       this.loading = true;
       try {
-        const res = await axios.get(`${BACKEND}/Reinscripcion.php?action=candidatos`);
+        const res = await axios.get(`${BACKEND}/reinscripciones?action=candidatos`, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
         if (res.data.status === 'success') {
           this.candidatos = res.data.data;
         }
@@ -210,7 +210,7 @@ export default {
           numeroControl: this.alumnoSeleccionado.numeroControl,
           id_club: this.clubSeleccionado
         };
-        const res = await axios.post(`${BACKEND}/Reinscripcion.php?action=inscribir`, payload);
+        const res = await axios.post(`${BACKEND}/reinscripciones?action=inscribir`, payload, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
         
         if (res.data.status === 'success') {
           this.$emit('log', {

@@ -13,10 +13,11 @@ const STORAGE_KEYS = {
 let currentToken = null;
 let isRefreshing = false;
 let refreshSubscribers = [];
+const isBrowser = () => typeof window !== 'undefined' && typeof sessionStorage !== 'undefined';
 
 export const authService = {
     login: async (credentials) => {
-        const response = await axios.post(`${BACKEND}/Login.php`, credentials);
+        const response = await axios.post(`${BACKEND}/auth/login`, credentials);
         
         if (response.data.status === 'success') {
             const { token, csrf_token, remember_token, token_expires_at, ...userData } = response.data;
@@ -45,7 +46,7 @@ export const authService = {
         if (token) {
             try {
                 await axios.post(
-                    `${BACKEND}/Logout.php`,
+                    `${BACKEND}/auth/logout`,
                     { mode, remember_token: authService.getRefreshToken() },
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
@@ -69,8 +70,8 @@ export const authService = {
 
         try {
             const response = await axios.post(
-                `${BACKEND}/RefreshToken.php`,
-                {},
+                `${BACKEND}/auth/refresh`,
+                { refresh_token: authService.getRefreshToken() },
                 { headers: { 'Authorization': `Bearer ${currentTokenValue}` } }
             );
 
@@ -81,6 +82,9 @@ export const authService = {
                 }
                 if (response.data.token_expires_at) {
                     authService.setTokenExpiry(response.data.token_expires_at);
+                }
+                if (response.data.remember_token) {
+                    authService.setRefreshToken(response.data.remember_token);
                 }
 
                 refreshSubscribers.forEach((callback) => callback(response.data.token));
@@ -104,7 +108,7 @@ export const authService = {
             return null;
         }
 
-        const response = await axios.get(`${BACKEND}/Me.php`, {
+        const response = await axios.get(`${BACKEND}/auth/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -118,11 +122,13 @@ export const authService = {
     },
 
     setToken: (token) => {
+        if (!isBrowser()) return;
         currentToken = token;
         sessionStorage.setItem(STORAGE_KEYS.TOKEN, token);
     },
 
     getToken: () => {
+        if (!isBrowser()) return null;
         if (currentToken) {
             return currentToken;
         }
@@ -130,30 +136,37 @@ export const authService = {
     },
 
     setRefreshToken: (token) => {
+        if (!isBrowser()) return;
         localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
     },
 
     getRefreshToken: () => {
+        if (!isBrowser()) return null;
         return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     },
 
     setCsrfToken: (token) => {
+        if (!isBrowser()) return;
         sessionStorage.setItem(STORAGE_KEYS.CSRF_TOKEN, token);
     },
 
     getCsrfToken: () => {
+        if (!isBrowser()) return null;
         return sessionStorage.getItem(STORAGE_KEYS.CSRF_TOKEN);
     },
 
     setTokenExpiry: (expiresAt) => {
+        if (!isBrowser()) return;
         sessionStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, expiresAt);
     },
 
     getTokenExpiry: () => {
+        if (!isBrowser()) return null;
         return sessionStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
     },
 
     setUserData: (data) => {
+        if (!isBrowser()) return;
         sessionStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(data));
         if (data.id) {
             sessionStorage.setItem(STORAGE_KEYS.USER_ID, String(data.id));
@@ -161,6 +174,7 @@ export const authService = {
     },
 
     getUserData: () => {
+        if (!isBrowser()) return null;
         const data = sessionStorage.getItem(STORAGE_KEYS.USER_DATA);
         if (data) {
             return JSON.parse(data);
@@ -169,6 +183,7 @@ export const authService = {
     },
 
     getUserId: () => {
+        if (!isBrowser()) return null;
         const fromUserData = authService.getUserData();
         if (fromUserData?.id) {
             return fromUserData.id;
@@ -202,6 +217,7 @@ export const authService = {
 
     clearAuth: () => {
         currentToken = null;
+        if (!isBrowser()) return;
         sessionStorage.removeItem(STORAGE_KEYS.TOKEN);
         sessionStorage.removeItem(STORAGE_KEYS.CSRF_TOKEN);
         sessionStorage.removeItem(STORAGE_KEYS.USER_DATA);
@@ -221,7 +237,7 @@ export const authService = {
             throw new Error('No autenticado');
         }
 
-        const response = await axios.get(`${BACKEND}/Sessions.php`, {
+        const response = await axios.get(`${BACKEND}/sesiones`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -235,7 +251,7 @@ export const authService = {
         }
 
         const response = await axios.delete(
-            `${BACKEND}/Sessions.php`,
+            `${BACKEND}/sesiones`,
             {
                 headers: { 'Authorization': `Bearer ${token}` },
                 data: { session_id: sessionId, mode: 'single' }
@@ -252,7 +268,7 @@ export const authService = {
         }
 
         const response = await axios.delete(
-            `${BACKEND}/Sessions.php`,
+            `${BACKEND}/sesiones`,
             {
                 headers: { 'Authorization': `Bearer ${token}` },
                 data: { mode: 'others' }

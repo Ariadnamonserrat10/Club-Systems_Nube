@@ -21,6 +21,7 @@
         </select>
       </div>
       <div class="col-md-8 text-end">
+        <button class="btn btn-success me-2" @click="$router.push('/crear-cuenta')">Crear usuario</button>
         <button class="btn btn-primary" @click="loadUsuarios">Refrescar</button>
       </div>
     </div>

@@ -1,31 +1,36 @@
 {
-  "name": "app-vue-electron",
+  "name": "sirce-nuxt",
   "private": true,
-  "version": "0.0.0",
-  "main": "electron/main.js",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "axios": "^1.13.2",
+    "bcryptjs": "^3.0.2",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "html2pdf.js": "^0.14.0",
     "jspdf": "^3.0.4",
     "jszip": "^3.10.1",
+    "mysql2": "^3.15.3",
+    "nuxt": "^4.0.0",
     "vue": "^3.5.22",
-    "vue-router": "^4.6.3"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.5",
-    "concurrently": "^9.2.1",
-    "cross-env": "^10.1.0",
-    "electron": "^39.1.0",
-    "electron-builder": "^26.0.12",
-    "vite": "^7.1.7",
-    "wait-on": "^9.0.1"
+    "@types/bootstrap": "^5.2.10",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.4"
+  },
+  "allowScripts": {
+    "core-js@3.47.0": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
   }
 }

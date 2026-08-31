@@ -157,7 +157,7 @@
               ¿Olvidaste tu contraseña?
             </button>
 
-            <router-link to="/crear-cuenta" class="link-btn link-primary">
+            <router-link v-if="false" to="/crear-cuenta" class="link-btn link-primary">
               <svg class="link-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="8" cy="5" r="2" stroke="currentColor" stroke-width="1.25"/>
                 <path d="M3 13C3 10.7909 5.23858 9 8 9C10.7614 9 13 10.7909 13 13" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
@@ -286,7 +286,7 @@ export default {
 
         const result = await authService.login(credentials);
           
-        if (result.tipo === "OFICINA") {
+        if (["SUPERADMIN", "ADMIN", "OFICINA"].includes(result.tipo)) {
           this.$router.push("/oficina");
         } else if (result.tipo === "MONITOR") {
           this.$router.push("/monitor");

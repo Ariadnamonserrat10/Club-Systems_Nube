@@ -113,6 +113,8 @@
 </template>
 
 <script>
+import { BACKEND } from '../services/backend';
+
 export default {
   name: 'AlumnosSR',
   props: {
@@ -137,7 +139,7 @@ export default {
     // ─── Carreras ──────────────────────────────────────────
     async cargarCarreras() {
       try {
-        const res = await fetch('carreras.php');
+        const res = await fetch(`${BACKEND}/carreras`, { headers: { Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` } });
         const json = await res.json();
         // Acepta { data: [...] } o arreglo directo
         this.carrerasMap = Array.isArray(json) ? json : (json.data || []);
@@ -314,9 +316,9 @@ export default {
       };
 
       try {
-        const res = await fetch('alumnos.php', {
+        const res = await fetch(`${BACKEND}/alumnos`, {
           method : 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionStorage.getItem('auth_token') || ''}` },
           body   : JSON.stringify(payload),
         });
 
@@ -439,4 +441,17 @@ export default {
 .check-ok { color: #28a745; font-weight: 600; font-size: .82rem; }
 .btn-eliminar-sm { background: transparent; border: none; color: #adb5bd; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
 .btn-eliminar-sm:hover { color: #dc3545; }
+@media (max-width: 900px) {
+  .alumnos-sr-container { padding: 0; }
+  .toolbar { flex-wrap: wrap; gap: 10px; }
+  .toolbar-left { flex-wrap: wrap; }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table { min-width: 1050px; }
+}
+@media (max-width: 576px) {
+  .title { font-size: 1.25rem; text-align: left; }
+  .toolbar, .table-header-info { padding: 10px; }
+  .btn-import { width: 100%; justify-content: center; }
+  .text-hint { width: 100%; }
+}
 </style>
